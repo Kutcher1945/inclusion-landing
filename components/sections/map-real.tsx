@@ -144,9 +144,22 @@ function LeafletMap({
   // Init map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    let cancelled = false;
+
     const init = async () => {
       const L = (await import("leaflet")).default;
       await import("leaflet/dist/leaflet.css");
+
+      if (cancelled) return;
+
+      // Clear any leftover Leaflet state on the container (React Strict Mode double-invoke)
+      const container = containerRef.current!;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((container as any)._leaflet_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (container as any)._leaflet_id = null;
+      }
+
       // @ts-expect-error internal
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -155,7 +168,7 @@ function LeafletMap({
         shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      const map = L.map(containerRef.current!, {
+      const map = L.map(container, {
         center: [43.238, 76.945], zoom: 12,
         zoomControl: false, attributionControl: false,
       });
@@ -176,6 +189,11 @@ function LeafletMap({
         mcg = (L as any).markerClusterGroup({ maxClusterRadius: 50, disableClusteringAtZoom: 16 });
       } catch { /* fallback: plain layer group */ }
 
+      if (cancelled) {
+        map.remove();
+        return;
+      }
+
       const group = mcg ?? L.layerGroup();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (group as any).addTo(map);
@@ -187,12 +205,14 @@ function LeafletMap({
     };
     init();
     return () => {
+      cancelled = true;
       if (mapRef.current) {
         // @ts-expect-error remove
         mapRef.current.remove();
         mapRef.current = null;
         groupRef.current = null;
         LRef.current = null;
+        setReady(false);
       }
     };
   }, []); // eslint-disable-line

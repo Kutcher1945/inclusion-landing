@@ -1,4 +1,9 @@
-const BASE = "https://green-admin.smartalmaty.kz";
+// Server-side: fetch the backend directly (no CORS on the server).
+// Browser-side: use relative URL so Next.js proxy (next.config rewrites) forwards it — avoids CORS.
+const BASE =
+  typeof window === "undefined"
+    ? "https://green-admin.smartalmaty.kz"
+    : "";
 
 export type Overview = {
   total_objects: number;
@@ -184,10 +189,10 @@ export type DeepAccessibility = {
   };
 };
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    next: { revalidate: 60 },
-  });
+async function get<T>(path: string, noCache = false): Promise<T> {
+  const res = await fetch(`${BASE}${path}`,
+    noCache ? { cache: "no-store" } : { next: { revalidate: 60 } }
+  );
   if (!res.ok) throw new Error(`${path} → ${res.status}`);
   return res.json();
 }
@@ -200,6 +205,7 @@ export const api = {
   accessibility:  () => get<AccessibilityStats>("/inclusion-api/analytics/accessibility_by_disability_type/"),
   trends:            (period = "month") => get<Trends>(`/inclusion-api/analytics/trends/?period=${period}`),
   deepAccessibility: () => get<DeepAccessibility>("/inclusion-api/analytics/deep_accessibility/"),
-  mapPoints:         () => get<MapData>("/inclusion-api/analytics/map_points/"),
+  // map_points is ~5MB — skip the 2MB Next.js fetch cache
+  mapPoints:         () => get<MapData>("/inclusion-api/analytics/map_points/", true),
   exportUrl:         () => `${BASE}/inclusion-api/analytics/export_all_activities/`,
 };
