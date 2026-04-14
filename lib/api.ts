@@ -185,9 +185,12 @@ export type DeepAccessibility = {
 };
 
 async function get<T>(path: string, noCache = false): Promise<T> {
-  const res = await fetch(`${BASE}${path}`,
+  const url = `${BASE}${path}`;
+  console.log(`[api] fetch → ${url}`);
+  const res = await fetch(url,
     noCache ? { cache: "no-store" } : { next: { revalidate: 60 } }
   );
+  console.log(`[api] response ← ${url} ${res.status}`);
   if (!res.ok) throw new Error(`${path} → ${res.status}`);
   return res.json();
 }
