@@ -1,9 +1,4 @@
-// Server-side: fetch the backend directly (no CORS on the server).
-// Browser-side: use relative URL so Next.js proxy (next.config rewrites) forwards it — avoids CORS.
-const BASE =
-  typeof window === "undefined"
-    ? "https://green-admin.smartalmaty.kz"
-    : "";
+const BASE = "https://green-admin.smartalmaty.kz";
 
 export type Overview = {
   total_objects: number;
