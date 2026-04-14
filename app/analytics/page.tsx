@@ -3,31 +3,7 @@ import { ArrowLeft, RefreshCw, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import { DashboardClient } from "@/components/analytics/dashboard-client";
 
-export const revalidate = 60;
-
-async function getData() {
-  const [overview, adaptation, districts, activities, trends, deep] =
-    await Promise.allSettled([
-      api.overview(),
-      api.adaptation(),
-      api.byDistrict(),
-      api.byActivityType(),
-      api.trends("month"),
-      api.deepAccessibility(),
-    ]);
-
-  return {
-    overview:   overview.status   === "fulfilled" ? overview.value   : null,
-    adaptation: adaptation.status === "fulfilled" ? adaptation.value : null,
-    districts:  districts.status  === "fulfilled" ? districts.value  : null,
-    activities: activities.status === "fulfilled" ? activities.value : null,
-    trends:     trends.status     === "fulfilled" ? trends.value     : null,
-    deep:       deep.status       === "fulfilled" ? deep.value       : null,
-  };
-}
-
-export default async function AnalyticsPage() {
-  const data = await getData();
+export default function AnalyticsPage() {
   const exportUrl = api.exportUrl();
 
   return (
@@ -68,7 +44,7 @@ export default async function AnalyticsPage() {
         </div>
       </header>
 
-      <DashboardClient {...data} exportUrl={exportUrl} />
+      <DashboardClient exportUrl={exportUrl} />
     </div>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2, Hotel, Home, BusFront, DoorOpen,
   Layers, MapPin, Activity, BarChart2, TrendingUp, Table2, PieChart, Sparkles,
   type LucideIcon,
 } from "lucide-react";
+import { api } from "@/lib/api";
 import type {
   Overview, AdaptationStats, DistrictStat, ActivityTypeStat, Trends, DeepAccessibility,
 } from "@/lib/api";
@@ -36,13 +37,7 @@ interface Tab {
 }
 
 interface Props {
-  overview:   Overview   | null;
-  adaptation: AdaptationStats | null;
-  districts:  DistrictStat[]  | null;
-  activities: ActivityTypeStat[] | null;
-  trends:     Trends | null;
-  deep:       DeepAccessibility | null;
-  exportUrl:  string;
+  exportUrl: string;
 }
 
 // ── Section heading ──────────────────────────────────────────────────────────
@@ -198,8 +193,33 @@ function TypeView({ tab, deep, districts, activities, adaptation }: {
 
 // ── Main dashboard client ────────────────────────────────────────────────────
 
-export function DashboardClient({ overview, adaptation, districts, activities, trends, deep, exportUrl }: Props) {
+export function DashboardClient({ exportUrl }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("all");
+
+  const [overview,   setOverview]   = useState<Overview | null>(null);
+  const [adaptation, setAdaptation] = useState<AdaptationStats | null>(null);
+  const [districts,  setDistricts]  = useState<DistrictStat[] | null>(null);
+  const [activities, setActivities] = useState<ActivityTypeStat[] | null>(null);
+  const [trends,     setTrends]     = useState<Trends | null>(null);
+  const [deep,       setDeep]       = useState<DeepAccessibility | null>(null);
+
+  useEffect(() => {
+    Promise.allSettled([
+      api.overview(),
+      api.adaptation(),
+      api.byDistrict(),
+      api.byActivityType(),
+      api.trends("month"),
+      api.deepAccessibility(),
+    ]).then(([ov, ad, di, ac, tr, dp]) => {
+      if (ov.status === "fulfilled") setOverview(ov.value);
+      if (ad.status === "fulfilled") setAdaptation(ad.value);
+      if (di.status === "fulfilled") setDistricts(di.value);
+      if (ac.status === "fulfilled") setActivities(ac.value);
+      if (tr.status === "fulfilled") setTrends(tr.value);
+      if (dp.status === "fulfilled") setDeep(dp.value);
+    });
+  }, []);
 
   const s = deep?.summary;
 
