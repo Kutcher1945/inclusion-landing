@@ -1,15 +1,22 @@
-import { api } from "@/lib/api";
+"use client";
+
+import { useEffect, useState } from "react";
+import type { MapData } from "@/lib/api";
 import { MapRealWrapper } from "./map-real-wrapper";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-export async function MapPreview() {
-  let data = null;
-  try {
-    data = await api.mapPoints();
-  } catch {
-    // backend offline — show nothing
-  }
+export function MapPreview() {
+  const [data, setData] = useState<MapData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/map-points")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setData(d))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <section id="map" className="py-24 bg-white">
@@ -42,7 +49,9 @@ export async function MapPreview() {
           )}
         </div>
 
-        {data ? (
+        {loading ? (
+          <div className="rounded-2xl border border-neutral-200 h-80 bg-neutral-50 animate-pulse" />
+        ) : data ? (
           <MapRealWrapper data={data} preview={true} />
         ) : (
           <div className="rounded-2xl border border-neutral-200 h-80 flex items-center justify-center text-neutral-400 text-sm">
