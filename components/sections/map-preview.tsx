@@ -6,12 +6,14 @@ import { MapRealWrapper } from "./map-real-wrapper";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://green-admin.smartalmaty.kz";
+
 export function MapPreview() {
   const [data, setData] = useState<MapData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/map-points")
+    fetch(`${BASE}/inclusion-api/analytics/map_points/`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => setData(d))
       .catch(() => setData(null))
