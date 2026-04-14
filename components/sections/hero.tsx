@@ -77,7 +77,7 @@ export function Hero() {
         {/* Stats row */}
         <div className="animate-fade-in-up delay-400 grid grid-cols-3 gap-4 max-w-xl mx-auto">
           {[
-            { value: "5 000+", label: "объектов" },
+            { value: "40 000+", label: "объектов" },
             { value: "97", label: "показателей" },
             { value: "4", label: "категории" },
           ].map((s) => (

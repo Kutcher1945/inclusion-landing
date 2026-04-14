@@ -30,7 +30,7 @@ export function MapPreview() {
               Карта
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight">
-              Все объекты на одной карте
+              Все паспортизированные объекты на одной карте
             </h2>
             <p className="text-neutral-500 text-base mt-2 max-w-md">
               Реальные данные ИС «Инклюзия» — фильтруйте по доступности, ищите объекты
