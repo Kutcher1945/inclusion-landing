@@ -1,15 +1,24 @@
-import { api } from "@/lib/api";
+"use client";
+
+import { useEffect, useState } from "react";
+import type { MapData } from "@/lib/api";
 import { MapRealWrapper } from "./map-real-wrapper";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-export async function MapPreview() {
-  let data = null;
-  try {
-    data = await api.mapPoints();
-  } catch {
-    // backend offline — show nothing
-  }
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://green-admin.smartalmaty.kz";
+
+export function MapPreview() {
+  const [data, setData] = useState<MapData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${BASE}/inclusion-api/analytics/map_points/`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setData(d))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <section id="map" className="py-24 bg-white">
@@ -21,7 +30,7 @@ export async function MapPreview() {
               Карта
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight">
-              Все объекты на одной карте
+              Все паспортизированные объекты на одной карте
             </h2>
             <p className="text-neutral-500 text-base mt-2 max-w-md">
               Реальные данные ИС «Инклюзия» — фильтруйте по доступности, ищите объекты
@@ -42,7 +51,9 @@ export async function MapPreview() {
           )}
         </div>
 
-        {data ? (
+        {loading ? (
+          <div className="rounded-2xl border border-neutral-200 h-80 bg-neutral-50 animate-pulse" />
+        ) : data ? (
           <MapRealWrapper data={data} preview={true} />
         ) : (
           <div className="rounded-2xl border border-neutral-200 h-80 flex items-center justify-center text-neutral-400 text-sm">

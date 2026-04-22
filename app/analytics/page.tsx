@@ -3,6 +3,7 @@ import { ArrowLeft, RefreshCw, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import { DashboardClient } from "@/components/analytics/dashboard-client";
 
+<<<<<<< HEAD
 export const revalidate = 60;
 
 async function getData() {
@@ -30,6 +31,10 @@ export default async function AnalyticsPage() {
   const data = await getData();
   const exportUrl       = api.exportUrl();
   const exportGeoJsonUrl = api.exportGeoJsonUrl();
+=======
+export default function AnalyticsPage() {
+  const exportUrl = api.exportUrl();
+>>>>>>> 0ddabb9541b9e784104f7c7e69f7e1742aeef5b8
 
   return (
     <div className="min-h-screen w-full bg-neutral-50 flex flex-col">
@@ -77,7 +82,7 @@ export default async function AnalyticsPage() {
         </div>
       </header>
 
-      <DashboardClient {...data} exportUrl={exportUrl} />
+      <DashboardClient exportUrl={exportUrl} />
     </div>
   );
 }

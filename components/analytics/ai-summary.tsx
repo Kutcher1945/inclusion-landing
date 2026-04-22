@@ -157,7 +157,8 @@ function MarkdownBlock({ text }: { text: string }) {
 /** Split plain text into ~250-word sentence-aware chunks */
 function splitChunks(text: string, maxWords = 250): string[] {
   // Split on sentence boundaries
-  const sentences = text.match(/[^.!?\n]+[.!?\n]+/g) ?? [text];
+  const normalized = text.replace(/(\d+)\.(\d+)/g, "$1 point $2");
+  const sentences = normalized.match(/[^.!?\n]+[.!?\n]+/g) ?? [normalized];
   const chunks: string[] = [];
   let current = "";
   let wordCount = 0;

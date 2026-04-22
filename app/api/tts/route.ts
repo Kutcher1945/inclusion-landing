@@ -7,6 +7,8 @@ export async function POST(req: NextRequest) {
   const { text } = await req.json();
   if (!text) return Response.json({ error: "text required" }, { status: 400 });
 
+  const spoken = text.replace(/(\d+)\.(\d+)/g, (_: string, int: string, dec: string) => `${int} point ${dec}`);
+
   const res = await fetch("https://api.mistral.ai/v1/audio/speech", {
     method: "POST",
     headers: {
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       model: "voxtral-mini-tts-2603",
-      input: text.slice(0, 4000),
+      input: spoken.slice(0, 4000),
       voice_id: VOICE_ID,
       response_format: "mp3",
     }),

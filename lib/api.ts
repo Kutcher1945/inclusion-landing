@@ -1,4 +1,4 @@
-const BASE = "http://localhost:8000";
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://green-admin.smartalmaty.kz";
 
 export type Overview = {
   total_objects: number;
