@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
-import { MapPin, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -28,18 +29,18 @@ export function Nav() {
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #29358f, #3772ff)" }}
-          >
-            <MapPin className="w-4 h-4 text-white" />
-          </div>
-          <span className={scrolled ? "text-neutral-900" : "text-white"}>
-            Инклюзия
-          </span>
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        {/* Logo: PNG has ~15% whitespace on each side; overdraw then clip to h-20 */}
+        <Link href="/" className="flex-shrink-0 overflow-hidden h-20 flex items-center -ml-4">
+          <Image
+            src={scrolled ? "/logo-dark-letters.png" : "/logo-white-letters.png"}
+            alt="Инклюзия"
+            width={380}
+            height={114}
+            className="w-auto"
+            style={{ height: "114px", marginTop: "-17px", marginBottom: "-17px" }}
+            priority
+          />
         </Link>
 
         {/* Desktop nav */}

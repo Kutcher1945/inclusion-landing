@@ -1,33 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, RefreshCw, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import { DashboardClient } from "@/components/analytics/dashboard-client";
 
-export const revalidate = 60;
-
-async function getData() {
-  const [overview, adaptation, districts, activities, trends, deep] =
-    await Promise.allSettled([
-      api.overview(),
-      api.adaptation(),
-      api.byDistrict(),
-      api.byActivityType(),
-      api.trends("month"),
-      api.deepAccessibility(),
-    ]);
-
-  return {
-    overview:   overview.status   === "fulfilled" ? overview.value   : null,
-    adaptation: adaptation.status === "fulfilled" ? adaptation.value : null,
-    districts:  districts.status  === "fulfilled" ? districts.value  : null,
-    activities: activities.status === "fulfilled" ? activities.value : null,
-    trends:     trends.status     === "fulfilled" ? trends.value     : null,
-    deep:       deep.status       === "fulfilled" ? deep.value       : null,
-  };
-}
-
-export default async function AnalyticsPage() {
-  const data = await getData();
+export default function AnalyticsPage() {
   const exportUrl       = api.exportUrl();
   const exportGeoJsonUrl = api.exportGeoJsonUrl();
 
@@ -46,8 +23,20 @@ export default async function AnalyticsPage() {
               <span className="hidden sm:inline">На главную</span>
             </Link>
             <span className="text-neutral-200 hidden sm:inline">|</span>
-            <h1 className="text-sm font-semibold text-neutral-900 truncate">
-              Аналитика · ИС «Инклюзия»
+            <Link href="/" className="shrink-0 overflow-hidden h-14 flex items-center -ml-2">
+              <Image
+                src="/logo-dark-letters.png"
+                alt="Инклюзия"
+                width={280}
+                height={84}
+                className="w-auto"
+                style={{ height: "84px", marginTop: "-12px", marginBottom: "-12px" }}
+                priority
+              />
+            </Link>
+            <span className="text-neutral-200 hidden sm:inline">|</span>
+            <h1 className="text-sm font-semibold text-neutral-900 truncate hidden sm:block">
+              Аналитика
             </h1>
           </div>
           <div className="flex items-center gap-3 shrink-0">

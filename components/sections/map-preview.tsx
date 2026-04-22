@@ -21,7 +21,7 @@ export function MapPreview() {
   }, []);
 
   return (
-    <section id="map" className="py-24 bg-white">
+    <section id="map" className="py-24 bg-white isolate">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Mail, Phone } from "lucide-react";
 
 export function Footer() {
@@ -8,14 +9,15 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #29358f, #3772ff)" }}
-              >
-                <MapPin className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-lg text-white">Инклюзия</span>
+            <div className="overflow-hidden h-20 flex items-center -ml-4 mb-1">
+              <Image
+                src="/logo-white-letters.png"
+                alt="Инклюзия"
+                width={380}
+                height={114}
+                className="w-auto"
+                style={{ height: "114px", marginTop: "-17px", marginBottom: "-17px" }}
+              />
             </div>
             <p className="text-sm leading-relaxed max-w-xs mb-5">
               Платформа мониторинга доступности городской инфраструктуры для людей с инвалидностью в городе Алматы.
