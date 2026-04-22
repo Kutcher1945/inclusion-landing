@@ -1,8 +1,59 @@
 "use client";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { MapData, MapPoint } from "@/lib/api";
-import { Search, X, MapPin, ArrowRight, ChevronRight } from "lucide-react";
+import { Search, X, MapPin, ArrowRight, ChevronRight, PenLine, Square, Trash2, Download } from "lucide-react";
 import Link from "next/link";
+
+// ── Geometry helpers ──────────────────────────────────────────────────────────
+
+function pointInPolygon(lat: number, lng: number, poly: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [lati, lngi] = poly[i];
+    const [latj, lngj] = poly[j];
+    if (((lati > lat) !== (latj > lat)) &&
+        (lng < (lngj - lngi) * (lat - lati) / (latj - lati) + lngi))
+      inside = !inside;
+  }
+  return inside;
+}
+
+import { api } from "@/lib/api";
+
+async function exportGeoJSON(points: MapPoint[], polygon: [number, number][]) {
+  const ids = points.map((p) => p.id);
+
+  try {
+    const res = await api.exportGeoJsonByIds(ids);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "selection_full.geojson"; a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    // Fallback: client-side export with available fields
+    const ring = [...polygon.map(([lat, lng]) => [lng, lat]), [polygon[0][1], polygon[0][0]]];
+    const fc = {
+      type: "FeatureCollection",
+      features: [
+        { type: "Feature", geometry: { type: "Polygon", coordinates: [ring] },
+          properties: { type: "selection_area", count: points.length } },
+        ...points.map((p) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+          properties: { id: p.id, name: p.name, address: p.address, type: p.type,
+            district: p.district, status: p.status, k: p.k, o: p.o, s: p.s, z: p.z },
+        })),
+      ],
+    };
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "selection.geojson"; a.click();
+    URL.revokeObjectURL(url);
+  }
+}
 
 // ── Virtual list ─────────────────────────────────────────────────────────────
 const ROW_H = 56; // px — fixed row height
@@ -127,19 +178,25 @@ function kozsColor(val: string | null | undefined): string {
 }
 
 function LeafletMap({
-  points, onSelect, kozsKey,
+  points, onSelect, kozsKey, drawTool, onShapeDrawn, clearDraw,
 }: {
   points: MapPoint[];
   onSelect: (obj: MapPoint) => void;
   kozsKey: "k" | "o" | "z" | "s" | null;
+  drawTool?: "rectangle" | "polygon" | null;
+  onShapeDrawn?: (latlngs: [number, number][]) => void;
+  clearDraw?: number;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef       = useRef<unknown>(null);
-  const groupRef     = useRef<unknown>(null);
-  const LRef         = useRef<unknown>(null);
-  const onSelectRef  = useRef(onSelect);
+  const containerRef  = useRef<HTMLDivElement>(null);
+  const mapRef        = useRef<unknown>(null);
+  const groupRef      = useRef<unknown>(null);
+  const LRef          = useRef<unknown>(null);
+  const drawLayerRef  = useRef<unknown>(null);
+  const onSelectRef   = useRef(onSelect);
+  const onShapeRef    = useRef(onShapeDrawn);
   const [ready, setReady] = useState(false);
-  onSelectRef.current = onSelect;
+  onSelectRef.current  = onSelect;
+  onShapeRef.current   = onShapeDrawn;
 
   // Init map once
   useEffect(() => {
@@ -245,6 +302,72 @@ function LeafletMap({
     }
   }, [points, ready, kozsKey]);
 
+  // Draw tool — activate leaflet-draw when drawTool changes
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const L   = LRef.current as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const map = mapRef.current as any;
+    if (!ready || !L || !map) return;
+
+    // Clear any previous drawn layer
+    if (drawLayerRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      map.removeLayer(drawLayerRef.current as any);
+      drawLayerRef.current = null;
+    }
+    if (!drawTool) return;
+
+    let cancelled = false;
+    const activate = async () => {
+      await import("leaflet-draw/dist/leaflet.draw.css" as string);
+      await import("leaflet-draw");
+      if (cancelled || !mapRef.current) return;
+
+      const drawnItems = new L.FeatureGroup();
+      map.addLayer(drawnItems);
+      drawLayerRef.current = drawnItems;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const Handler = drawTool === "rectangle" ? (L.Draw as any).Rectangle : (L.Draw as any).Polygon;
+      const handler = new Handler(map, drawTool === "polygon" ? { allowIntersection: false } : {});
+      handler.enable();
+
+      const onCreated = (e: unknown) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const layer = (e as any).layer;
+        drawnItems.addLayer(layer);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw: [number, number][] = (layer.getLatLngs()[0] as any[]).map((ll: any) => [ll.lat, ll.lng]);
+        onShapeRef.current?.(raw);
+      };
+      map.on("draw:created", onCreated);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (map as any).__drawCleanup = () => {
+        map.off("draw:created", onCreated);
+        if (drawLayerRef.current) { map.removeLayer(drawLayerRef.current); drawLayerRef.current = null; }
+      };
+    };
+    activate();
+    return () => {
+      cancelled = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (map as any).__drawCleanup?.();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawTool, ready]);
+
+  // Clear drawn shapes when clearDraw increments
+  useEffect(() => {
+    if (!clearDraw) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const map = mapRef.current as any;
+    if (drawLayerRef.current && map) {
+      map.removeLayer(drawLayerRef.current);
+      drawLayerRef.current = null;
+    }
+  }, [clearDraw]);
+
   return <div ref={containerRef} className="w-full h-full" />;
 }
 
@@ -256,6 +379,22 @@ function FullscreenMap({ data }: { data: MapData }) {
   const [kozsFilter, setKozsFilter] = useState<"k"|"o"|"z"|"s"|null>(null);
   const [search, setSearch]     = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [drawTool, setDrawTool] = useState<"rectangle" | "polygon" | null>(null);
+  const [clearDraw, setClearDraw] = useState(0);
+  const [selection, setSelection] = useState<{ points: MapPoint[]; polygon: [number, number][] } | null>(null);
+
+  const handleShapeDrawn = useCallback((polygon: [number, number][]) => {
+    const inside = data.points.filter(
+      (p) => p.lat && p.lng && pointInPolygon(p.lat, p.lng, polygon)
+    );
+    setSelection({ points: inside, polygon });
+    setDrawTool(null);
+  }, [data.points]);
+
+  const clearSelection = () => {
+    setSelection(null);
+    setClearDraw((n) => n + 1);
+  };
 
   // Map status filter key → exact DB value for KOZS fields
   const statusToKozs: Record<string, string | null> = {
@@ -316,11 +455,60 @@ function FullscreenMap({ data }: { data: MapData }) {
   return (
     <div className="w-full h-full relative">
       {/* Map fills entire screen */}
-      <LeafletMap points={filteredPoints} onSelect={setSelected} kozsKey={kozsFilter} />
+      <LeafletMap
+        points={filteredPoints}
+        onSelect={setSelected}
+        kozsKey={kozsFilter}
+        drawTool={drawTool}
+        onShapeDrawn={handleShapeDrawn}
+        clearDraw={clearDraw}
+      />
 
       {/* Object card popup */}
       {selected && (
         <ObjectCard obj={selected} onClose={() => setSelected(null)} fullscreen />
+      )}
+
+      {/* ── Selection result panel ── */}
+      {selection && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100] bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl shadow-black/10 border border-neutral-200/80 px-5 py-4 flex items-center gap-5 min-w-[420px]">
+          <div>
+            <p className="text-xs text-neutral-400 mb-0.5">Объектов в области</p>
+            <p className="text-2xl font-bold text-neutral-900 tabular-nums">{selection.points.length.toLocaleString("ru-RU")}</p>
+          </div>
+          <div className="w-px h-10 bg-neutral-100 shrink-0" />
+          <div className="flex gap-3 text-xs flex-1">
+            {(["accessible","partial","inaccessible","unknown"] as const).map((s) => {
+              const m = STATUS_META[s];
+              const n = selection.points.filter((p) => p.status === s).length;
+              return (
+                <div key={s} className="flex flex-col items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ background: m.color }} />
+                  <span className="tabular-nums font-semibold text-neutral-800">{n}</span>
+                  <span className="text-neutral-400 text-[10px]">{m.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="w-px h-10 bg-neutral-100 shrink-0" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => exportGeoJSON(selection.points, selection.polygon)}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
+              style={{ background: "#3772ff" }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              GeoJSON
+            </button>
+            <button
+              onClick={clearSelection}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Очистить
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── Floating filter toolbar ── */}
@@ -390,6 +578,28 @@ function FullscreenMap({ data }: { data: MapData }) {
               </div>
             </>
           )}
+        </div>
+
+        {/* Row 3: Draw tools */}
+        <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-lg shadow-black/10 border border-neutral-200/80">
+          <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide shrink-0">Область</span>
+          <div className="w-px h-4 bg-neutral-200 shrink-0" />
+          <button
+            onClick={() => { clearSelection(); setDrawTool(drawTool === "rectangle" ? null : "rectangle"); }}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition-all"
+            style={drawTool === "rectangle" ? { background: "#3772ff", color: "white" } : { background: "transparent", color: "#6b7280" }}
+          >
+            <Square className="w-3.5 h-3.5" />
+            Прямоугольник
+          </button>
+          <button
+            onClick={() => { clearSelection(); setDrawTool(drawTool === "polygon" ? null : "polygon"); }}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition-all"
+            style={drawTool === "polygon" ? { background: "#3772ff", color: "white" } : { background: "transparent", color: "#6b7280" }}
+          >
+            <PenLine className="w-3.5 h-3.5" />
+            Полигон
+          </button>
         </div>
       </div>
 

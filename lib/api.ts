@@ -1,4 +1,4 @@
-const BASE = "https://green-admin.smartalmaty.kz";
+const BASE = "http://localhost:8000";
 
 export type Overview = {
   total_objects: number;
@@ -205,5 +205,12 @@ export const api = {
   deepAccessibility: () => get<DeepAccessibility>("/inclusion-api/analytics/deep_accessibility/"),
   // map_points is ~5MB — skip the 2MB Next.js fetch cache
   mapPoints:         () => get<MapData>("/inclusion-api/analytics/map_points/", true),
-  exportUrl:         () => `${BASE}/inclusion-api/analytics/export_all_activities/`,
+  exportUrl:            () => `${BASE}/inclusion-api/analytics/export_all_activities/`,
+  exportGeoJsonUrl:     () => `${BASE}/inclusion-api/analytics/export_geojson/`,
+  exportGeoJsonByIds:   (ids: number[]) =>
+    fetch(`${BASE}/inclusion-api/analytics/export_geojson_by_ids/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    }),
 };

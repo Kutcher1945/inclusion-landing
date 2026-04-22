@@ -28,7 +28,8 @@ async function getData() {
 
 export default async function AnalyticsPage() {
   const data = await getData();
-  const exportUrl = api.exportUrl();
+  const exportUrl       = api.exportUrl();
+  const exportGeoJsonUrl = api.exportGeoJsonUrl();
 
   return (
     <div className="min-h-screen w-full bg-neutral-50 flex flex-col">
@@ -54,6 +55,14 @@ export default async function AnalyticsPage() {
               <RefreshCw className="w-3 h-3" />
               Каждую минуту
             </span>
+            <a
+              href={exportGeoJsonUrl}
+              download="inclusion_almaty.geojson"
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">GeoJSON</span>
+            </a>
             <a
               href={exportUrl}
               target="_blank"
