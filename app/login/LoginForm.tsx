@@ -11,11 +11,10 @@ type Props = {
   redirectTo: string;
 };
 
-type ServerError = "invalid_credentials" | "not_staff" | "upstream_error" | null;
+type ServerError = "invalid_credentials" | "upstream_error" | null;
 
 const ERROR_MESSAGES: Record<NonNullable<ServerError>, string> = {
   invalid_credentials: "Неверное имя пользователя или пароль",
-  not_staff: "Доступ разрешён только для сотрудников",
   upstream_error: "Ошибка сервера. Повторите попытку позже.",
 };
 
@@ -44,14 +43,6 @@ export function LoginForm({ redirectTo }: Props) {
       if (!tokenRes.ok)            { setServerError("upstream_error"); return; }
 
       const { access, refresh } = await tokenRes.json() as { access: string; refresh: string };
-
-      // Verify is_staff directly from Django
-      const meRes = await fetch(`${BACKEND}/inclusion-api/admin/me/`, {
-        headers: { Authorization: `Bearer ${access}` },
-      });
-      if (!meRes.ok) { setServerError("upstream_error"); return; }
-      const user = await meRes.json() as { is_staff?: boolean };
-      if (!user.is_staff) { setServerError("not_staff"); return; }
 
       // Ask Next.js to store the tokens as httpOnly cookies (no Django call here)
       const sessionRes = await fetch("/api/auth/set-session", {
