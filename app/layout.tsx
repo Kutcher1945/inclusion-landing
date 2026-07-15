@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeScript } from "@/components/ThemeScript";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -20,8 +22,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${inter.variable} scroll-smooth`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="ru" className={`${inter.variable} scroll-smooth`} suppressHydrationWarning>
+      <body className="min-h-screen antialiased bg-[#040d14]">
+        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeScript />
+      </body>
     </html>
   );
 }

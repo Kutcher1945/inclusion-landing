@@ -7,11 +7,15 @@ import { Impact } from "@/components/sections/impact";
 import { MapPreview } from "@/components/sections/map-preview";
 import { CTA } from "@/components/sections/cta";
 import { Footer } from "@/components/sections/footer";
+import { getSession } from "@/lib/auth/dal";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getSession();
+  const user = session ? { username: session.user.username } : null;
+
   return (
     <>
-      <Nav />
+      <Nav user={user} />
       <main>
         <Hero />
         <Features />

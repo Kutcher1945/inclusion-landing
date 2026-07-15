@@ -1,119 +1,197 @@
-import { TrendingUp, Download, BarChart2, PieChart } from "lucide-react";
+import { Download } from "lucide-react";
 
 const districts = [
-  { name: "Алатауский", total: 412, pct: 38 },
-  { name: "Алмалинский", total: 387, pct: 54 },
-  { name: "Ауэзовский", total: 356, pct: 41 },
+  { name: "Алатауский",    total: 412, pct: 38 },
+  { name: "Алмалинский",   total: 387, pct: 54 },
+  { name: "Ауэзовский",    total: 356, pct: 41 },
   { name: "Бостандыкский", total: 298, pct: 62 },
-  { name: "Медеуский", total: 271, pct: 47 },
+  { name: "Медеуский",     total: 271, pct: 47 },
 ];
 
 const categories = [
-  { code: "К", label: "Кресло-коляска", pct: 42, color: "#3772ff" },
+  { code: "К", label: "Кресло-коляска",     pct: 42, color: "#3772ff" },
   { code: "О", label: "Опорно-двигательная", pct: 55, color: "#8b5cf6" },
-  { code: "С", label: "Слух", pct: 68, color: "#10b981" },
-  { code: "З", label: "Зрение", pct: 31, color: "#f59e0b" },
+  { code: "С", label: "Слух",               pct: 68, color: "#10b981" },
+  { code: "З", label: "Зрение",             pct: 31, color: "#f59e0b" },
 ];
 
-const metrics = [
-  { label: "Всего объектов", value: "5 241", delta: "+312 за месяц", icon: BarChart2, positive: true },
-  { label: "Доступных объектов", value: "1 893", delta: "36% от всех", icon: TrendingUp, positive: true },
-  { label: "Без заключения", value: "648", delta: "требуют оценки", icon: PieChart, positive: false },
-  { label: "Экспортов Excel", value: "124", delta: "за последние 30 дней", icon: Download, positive: true },
-];
+const sparkline = [28, 31, 29, 35, 38, 33, 42, 45, 41, 50, 53, 48, 57, 61, 58, 65, 62, 68, 71, 74];
 
 export function Analytics() {
+  const max = Math.max(...sparkline);
+  const min = Math.min(...sparkline);
+
+  const points = sparkline
+    .map((v, i) => {
+      const x = (i / (sparkline.length - 1)) * 280;
+      const y = 48 - ((v - min) / (max - min)) * 44;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
   return (
-    <section id="analytics" className="py-28 bg-neutral-50">
-      <div className="max-w-7xl mx-auto px-6">
+    <section id="analytics" className="py-28 bg-[#070e1b] relative overflow-hidden">
+      {/* Ambient glows */}
+      <div
+        className="absolute top-0 right-1/3 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(55,114,255,0.05) 0%, transparent 70%)" }}
+      />
+      <div
+        className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.04) 0%, transparent 70%)" }}
+      />
+
+      <div className="relative max-w-7xl mx-auto px-6">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="inline-block text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full mb-4 text-[#3772ff] bg-[#eff4ff]">
+        <div className="text-center mb-14">
+          <span className="inline-block text-[11px] font-semibold tracking-[0.2em] uppercase px-3 py-1 rounded-full mb-4 text-[#3772ff] bg-[#3772ff]/10 border border-[#3772ff]/20">
             Аналитика
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
             Данные, которые помогают решать
           </h2>
-          <p className="text-neutral-500 text-lg max-w-lg mx-auto">
+          <p className="text-white/35 text-lg max-w-lg mx-auto">
             Интерактивные дашборды с возможностью экспорта для отчётности
           </p>
         </div>
 
-        {/* Metric cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {metrics.map((m, i) => (
-            <div
-              key={m.label}
-              className="animate-fade-in-up bg-white rounded-2xl p-5 border border-neutral-100 hover:shadow-md transition-all"
-              style={{ animationDelay: `${i * 0.08}s` }}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <p className="text-xs font-medium text-neutral-500 leading-snug max-w-[80%]">{m.label}</p>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${m.positive ? "bg-[#eff4ff]" : "bg-orange-50"}`}>
-                  <m.icon className={`w-4 h-4 ${m.positive ? "text-[#3772ff]" : "text-orange-400"}`} />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-neutral-900">{m.value}</div>
-              <div className={`text-xs mt-1 ${m.positive ? "text-green-600" : "text-orange-500"}`}>{m.delta}</div>
-            </div>
-          ))}
-        </div>
+        {/* Bento grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
 
-        {/* Bottom grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* District breakdown */}
-          <div className="bg-white rounded-2xl p-7 border border-neutral-100">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-neutral-900">Разрез по районам</h3>
-              <button
-                className="text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[#3772ff] bg-[#eff4ff] hover:bg-[#dce9ff] transition-colors"
+          {/* ── Hero stat: total objects + sparkline ── */}
+          <div className="md:col-span-5 group relative rounded-2xl bg-white/[0.04] border border-white/[0.07] p-6 overflow-hidden hover:bg-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+            <div
+              className="absolute -top-16 -left-16 w-64 h-64 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(55,114,255,0.15) 0%, transparent 70%)" }}
+            />
+            <div className="text-[10px] text-white/35 uppercase tracking-wider mb-4">Всего объектов</div>
+            <div className="text-6xl font-black text-white tabular-nums leading-none mb-1">5 241</div>
+            <div className="text-[13px] text-emerald-400 mb-6">+312 за последний месяц ↑</div>
+
+            {/* Sparkline */}
+            <div className="rounded-xl bg-[#0a1628] border border-white/[0.06] p-4">
+              <div className="text-[9px] text-white/25 uppercase tracking-wider mb-2">Динамика паспортов</div>
+              <svg viewBox="0 0 280 52" className="w-full" preserveAspectRatio="none" style={{ height: 52 }}>
+                {/* Fill area */}
+                <defs>
+                  <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3772ff" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#3772ff" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <polygon
+                  points={`0,52 ${points} 280,52`}
+                  fill="url(#sparkFill)"
+                />
+                <polyline
+                  points={points}
+                  fill="none"
+                  stroke="#3772ff"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                {/* Last point dot */}
+                <circle
+                  cx={(((sparkline.length - 1) / (sparkline.length - 1)) * 280).toString()}
+                  cy={(48 - ((sparkline[sparkline.length - 1] - min) / (max - min)) * 44).toString()}
+                  r="3"
+                  fill="#3772ff"
+                />
+              </svg>
+              <div className="flex justify-between text-[8px] text-white/20 mt-1">
+                <span>Янв</span><span>Апр</span><span>Июл</span><span>Сег</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── 4 mini metric tiles ── */}
+          <div className="md:col-span-7 grid grid-cols-2 gap-3">
+            {[
+              { label: "Доступных объектов", value: "1 893", sub: "36% от всех",          color: "#3772ff",  positive: true  },
+              { label: "Без заключения",     value: "648",   sub: "требуют оценки",       color: "#f59e0b",  positive: false },
+              { label: "Новых за месяц",     value: "312",   sub: "паспортов добавлено",  color: "#10b981",  positive: true  },
+              { label: "Экспортов Excel",    value: "124",   sub: "за последние 30 дней", color: "#8b5cf6",  positive: true  },
+            ].map((m) => (
+              <div
+                key={m.label}
+                className="group relative rounded-2xl bg-white/[0.04] border border-white/[0.07] p-5 overflow-hidden hover:bg-white/[0.06] hover:border-white/[0.12] transition-all duration-300"
               >
-                <Download className="w-3.5 h-3.5" />
-                Экспорт Excel
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{ background: `radial-gradient(circle at 100% 0%, ${m.color}12 0%, transparent 60%)` }}
+                />
+                <div className="text-[10px] text-white/35 mb-3 leading-snug">{m.label}</div>
+                <div className="text-3xl font-black tabular-nums leading-none mb-1.5" style={{ color: m.color }}>
+                  {m.value}
+                </div>
+                <div className={`text-[10px] ${m.positive ? "text-white/30" : "text-amber-400/70"}`}>{m.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── District breakdown ── */}
+          <div className="md:col-span-7 group relative rounded-2xl bg-white/[0.04] border border-white/[0.07] p-6 overflow-hidden hover:bg-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+            <div
+              className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(55,114,255,0.12) 0%, transparent 70%)" }}
+            />
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <div className="text-[10px] text-white/35 uppercase tracking-wider mb-0.5">Разрез по районам</div>
+                <div className="text-white font-semibold">Доступность объектов</div>
+              </div>
+              <button className="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg text-[#3772ff] bg-[#3772ff]/10 border border-[#3772ff]/20 hover:bg-[#3772ff]/20 transition-colors">
+                <Download className="w-3 h-3" />
+                Excel
               </button>
             </div>
-            <div className="space-y-4">
-              {districts.map((d) => (
-                <div key={d.name}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-sm text-neutral-700">{d.name}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-neutral-400">{d.total} объектов</span>
-                      <span className="text-xs font-semibold text-neutral-700">{d.pct}%</span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+            <div className="space-y-3">
+              {[...districts].sort((a, b) => b.pct - a.pct).map((d, i) => (
+                <div key={d.name} className="flex items-center gap-3">
+                  <span className="text-[10px] text-white/25 w-3 tabular-nums">{i + 1}</span>
+                  <span className="text-[11px] text-white/50 w-24 shrink-0">{d.name}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-all"
+                      className="h-full rounded-full"
                       style={{
                         width: `${d.pct}%`,
-                        background: "linear-gradient(90deg, #3772ff, #6aa3ff)",
+                        background: `linear-gradient(to right, #3772ff, #6aa3ff)`,
+                        opacity: 0.5 + (d.pct / 100) * 0.5,
                       }}
                     />
                   </div>
+                  <span className="text-[10px] text-white/30 w-16 text-right tabular-nums shrink-0">{d.total} obj.</span>
+                  <span className="text-sm font-bold tabular-nums text-white/70 w-8 text-right shrink-0">{d.pct}%</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Category breakdown */}
-          <div className="bg-white rounded-2xl p-7 border border-neutral-100">
-            <h3 className="font-semibold text-neutral-900 mb-6">Доступность по категориям</h3>
-            <div className="space-y-5">
+          {/* ── Category breakdown ── */}
+          <div className="md:col-span-5 group relative rounded-2xl bg-white/[0.04] border border-white/[0.07] p-6 overflow-hidden hover:bg-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+            <div
+              className="absolute -top-16 -right-16 w-56 h-56 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)" }}
+            />
+            <div className="text-[10px] text-white/35 uppercase tracking-wider mb-0.5">Категории МГН</div>
+            <div className="text-white font-semibold mb-5">Доступность по типу</div>
+
+            <div className="space-y-4">
               {categories.map((c) => (
-                <div key={c.code} className="flex items-center gap-4">
+                <div key={c.code} className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                    style={{ background: c.color }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0"
+                    style={{ background: `${c.color}20`, border: `1px solid ${c.color}30`, color: c.color }}
                   >
                     {c.code}
                   </div>
                   <div className="flex-1">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm text-neutral-700">{c.label}</span>
-                      <span className="text-sm font-semibold" style={{ color: c.color }}>{c.pct}%</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] text-white/50">{c.label}</span>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: c.color }}>{c.pct}%</span>
                     </div>
-                    <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{ width: `${c.pct}%`, background: c.color }}
@@ -123,10 +201,12 @@ export function Analytics() {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-neutral-400 mt-5 pt-5 border-t border-neutral-100">
+
+            <p className="text-[9px] text-white/20 mt-5 pt-4 border-t border-white/[0.05]">
               % объектов, получивших оценку «доступно» или «частично доступно»
             </p>
           </div>
+
         </div>
       </div>
     </section>

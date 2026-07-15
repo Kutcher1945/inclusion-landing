@@ -18,13 +18,13 @@ export function AdaptationChart({ data }: Props) {
     .filter((d) => d.value > 0);
 
   return (
-    <div className="bg-white rounded-2xl p-7 border border-neutral-100">
-      <h3 className="font-semibold text-neutral-900 mb-1">Уровни адаптации</h3>
-      <p className="text-sm text-neutral-400 mb-2">По числу адаптированных показателей из 97</p>
+    <div className="bg-surface rounded-2xl p-7 border border-foreground/8">
+      <h3 className="font-semibold text-foreground mb-1">Уровни адаптации</h3>
+      <p className="text-sm text-foreground/40 mb-2">По числу адаптированных показателей из 97</p>
 
       {/* Average badge */}
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#eff4ff] mb-5">
-        <span className="text-xs text-neutral-500">Средний уровень:</span>
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl mb-5" style={{ background: "color-mix(in srgb, #3772ff 12%, transparent)" }}>
+        <span className="text-xs text-foreground/50">Средний уровень:</span>
         <span className="text-sm font-bold text-[#3772ff]">{data.average_adaptation_percentage}%</span>
       </div>
 
@@ -45,7 +45,10 @@ export function AdaptationChart({ data }: Props) {
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb" }}
+              contentStyle={{
+                borderRadius: "12px", border: "1px solid var(--border)",
+                background: "var(--surface)", color: "var(--foreground)",
+              }}
               formatter={(v) => [(v as number)?.toLocaleString("ru-RU") ?? "0", "объектов"]}
             />
           </PieChart>
@@ -56,9 +59,9 @@ export function AdaptationChart({ data }: Props) {
             <div key={d.key} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                <span className="text-xs text-neutral-600">{d.label}</span>
+                <span className="text-xs text-foreground/60">{d.label}</span>
               </div>
-              <span className="text-xs font-semibold text-neutral-800 tabular-nums">
+              <span className="text-xs font-semibold text-foreground/85 tabular-nums">
                 {d.value.toLocaleString("ru-RU")}
               </span>
             </div>

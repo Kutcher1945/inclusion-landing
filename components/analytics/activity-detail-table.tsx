@@ -9,10 +9,10 @@ function KozsBar({ value, total, color }: { value: number; total: number; color:
   const pct = total ? Math.round((value / total) * 100) : 0;
   return (
     <div className="flex items-center gap-1.5 min-w-[70px]">
-      <div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+      <div className="flex-1 h-1.5 rounded-full bg-foreground/8 overflow-hidden">
         <div style={{ width: `${pct}%`, background: color }} className="h-full" />
       </div>
-      <span className="text-xs tabular-nums text-neutral-500 w-6 text-right">{pct}%</span>
+      <span className="text-xs tabular-nums text-foreground/50 w-6 text-right">{pct}%</span>
     </div>
   );
 }
@@ -53,19 +53,19 @@ export function ActivityDetailTable({ data }: Props) {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-neutral-50">
-        <h3 className="font-semibold text-neutral-900 text-sm">Виды и подвиды деятельности · К/О/С/З</h3>
-        <p className="text-xs text-neutral-400 mt-0.5">Нажмите на вид чтобы раскрыть подвиды</p>
+    <div className="bg-surface rounded-2xl border border-foreground/8 overflow-hidden">
+      <div className="px-6 py-4 border-b border-foreground/5">
+        <h3 className="font-semibold text-foreground text-sm">Виды и подвиды деятельности · К/О/С/З</h3>
+        <p className="text-xs text-foreground/40 mt-0.5">Нажмите на вид чтобы раскрыть подвиды</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-neutral-50 bg-neutral-50">
-              <th className="text-left px-5 py-2.5 text-neutral-500 font-semibold uppercase tracking-wide w-[40%]">
+            <tr className="border-b border-foreground/5 bg-foreground/[0.04]">
+              <th className="text-left px-5 py-2.5 text-foreground/50 font-semibold uppercase tracking-wide w-[40%]">
                 Вид / Подвид
               </th>
-              <th className="text-right px-3 py-2.5 text-neutral-500 font-semibold uppercase tracking-wide">
+              <th className="text-right px-3 py-2.5 text-foreground/50 font-semibold uppercase tracking-wide">
                 Всего
               </th>
               <th className="px-4 py-2.5 text-[#3772ff] font-bold">К</th>
@@ -86,27 +86,27 @@ export function ActivityDetailTable({ data }: Props) {
                   {/* Type row */}
                   <tr
                     key={`type-${type}`}
-                    className="border-b border-neutral-50 bg-neutral-50/60 hover:bg-neutral-100/60 transition-colors cursor-pointer"
+                    className="border-b border-foreground/5 bg-foreground/[0.025] hover:bg-foreground/[0.06] transition-colors cursor-pointer"
                     onClick={() => hasSubs && toggle(type)}
                   >
-                    <td className="px-5 py-2.5 font-semibold text-neutral-800">
+                    <td className="px-5 py-2.5 font-semibold text-foreground/85">
                       <div className="flex items-center gap-2">
                         {hasSubs ? (
                           isOpen
-                            ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                            : <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                            ? <ChevronDown className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
+                            : <ChevronRight className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
                         ) : (
                           <span className="w-3.5 shrink-0" />
                         )}
                         <span className="truncate max-w-[320px]">{type}</span>
                         {hasSubs && (
-                          <span className="text-[10px] text-neutral-400 font-normal shrink-0">
+                          <span className="text-[10px] text-foreground/40 font-normal shrink-0">
                             {subs.length} подвида
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums font-bold text-neutral-900">
+                    <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">
                       {t.total.toLocaleString("ru-RU")}
                     </td>
                     <td className="px-4 py-2.5">
@@ -127,17 +127,17 @@ export function ActivityDetailTable({ data }: Props) {
                   {isOpen && subs.map((sub, si) => (
                     <tr
                       key={`sub-${type}-${si}`}
-                      className="border-b border-neutral-50 hover:bg-blue-50/30 transition-colors"
+                      className="border-b border-foreground/5 hover:bg-[#3772ff]/[0.06] transition-colors"
                     >
-                      <td className="pl-11 pr-5 py-2 text-neutral-600">
+                      <td className="pl-11 pr-5 py-2 text-foreground/60">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-1 h-1 rounded-full bg-neutral-300 shrink-0" />
+                          <span className="w-1 h-1 rounded-full bg-foreground/20 shrink-0" />
                           <span className="truncate max-w-[300px]">
                             {sub.sub_type_of_activity__name_ru}
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-neutral-600 font-medium">
+                      <td className="px-3 py-2 text-right tabular-nums text-foreground/60 font-medium">
                         {sub.total.toLocaleString("ru-RU")}
                       </td>
                       <td className="px-4 py-2">

@@ -32,7 +32,7 @@ function renderInline(text: string): React.ReactNode[] {
   let last = 0, m: RegExpExecArray | null, key = 0;
   while ((m = regex.exec(text)) !== null) {
     if (m.index > last) parts.push(text.slice(last, m.index));
-    parts.push(<strong key={key++} className="font-semibold text-neutral-900">{m[1]}</strong>);
+    parts.push(<strong key={key++} className="font-semibold text-foreground">{m[1]}</strong>);
     last = m.index + m[0].length;
   }
   if (last < text.length) parts.push(text.slice(last));
@@ -53,7 +53,7 @@ function MarkdownBlock({ text }: { text: string }) {
 
     if (line.startsWith("## ")) {
       nodes.push(
-        <h2 key={i} className="text-base font-bold text-neutral-900 mt-6 mb-2 first:mt-0 pb-1 border-b border-neutral-100">
+        <h2 key={i} className="text-base font-bold text-foreground mt-6 mb-2 first:mt-0 pb-1 border-b border-foreground/8">
           {renderInline(line.slice(3))}
         </h2>
       );
@@ -61,7 +61,7 @@ function MarkdownBlock({ text }: { text: string }) {
     }
     if (line.startsWith("### ")) {
       nodes.push(
-        <h3 key={i} className="text-sm font-semibold text-neutral-800 mt-4 mb-1.5">
+        <h3 key={i} className="text-sm font-semibold text-foreground/85 mt-4 mb-1.5">
           {renderInline(line.slice(4))}
         </h3>
       );
@@ -69,14 +69,14 @@ function MarkdownBlock({ text }: { text: string }) {
     }
     if (line.startsWith("#### ")) {
       nodes.push(
-        <h4 key={i} className="text-sm font-medium text-neutral-700 mt-3 mb-1">
+        <h4 key={i} className="text-sm font-medium text-foreground/75 mt-3 mb-1">
           {renderInline(line.slice(5))}
         </h4>
       );
       i++; continue;
     }
     if (/^---+$/.test(line.trim())) {
-      nodes.push(<hr key={i} className="border-neutral-100 my-3" />);
+      nodes.push(<hr key={i} className="border-foreground/8 my-3" />);
       i++; continue;
     }
     if (line.startsWith("|")) {
@@ -89,7 +89,7 @@ function MarkdownBlock({ text }: { text: string }) {
             <thead>
               <tr>
                 {rows[0]?.split("|").filter((_, ci) => ci > 0 && ci < rows[0].split("|").length - 1).map((cell, ci) => (
-                  <th key={ci} className="text-left px-3 py-2 bg-neutral-50 border border-neutral-200 font-semibold text-neutral-700">
+                  <th key={ci} className="text-left px-3 py-2 bg-foreground/[0.04] border border-foreground/15 font-semibold text-foreground/75">
                     {renderInline(cell.trim())}
                   </th>
                 ))}
@@ -97,9 +97,9 @@ function MarkdownBlock({ text }: { text: string }) {
             </thead>
             <tbody>
               {rows.slice(1).map((row, ri) => (
-                <tr key={ri} className="hover:bg-neutral-50">
+                <tr key={ri} className="hover:bg-foreground/[0.04]">
                   {row.split("|").filter((_, ci) => ci > 0 && ci < row.split("|").length - 1).map((cell, ci) => (
-                    <td key={ci} className="px-3 py-2 border border-neutral-200 text-neutral-600 align-top">
+                    <td key={ci} className="px-3 py-2 border border-foreground/15 text-foreground/60 align-top">
                       {renderInline(cell.trim())}
                     </td>
                   ))}
@@ -121,7 +121,7 @@ function MarkdownBlock({ text }: { text: string }) {
       nodes.push(
         <ul key={`ul-${i}`} className="my-2 space-y-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex gap-2 text-sm text-neutral-700 leading-relaxed" style={{ paddingLeft: `${item.indent * 0.75}rem` }}>
+            <li key={ii} className="flex gap-2 text-sm text-foreground/75 leading-relaxed" style={{ paddingLeft: `${item.indent * 0.75}rem` }}>
               <span className="mt-2 w-1.5 h-1.5 rounded-full bg-indigo-300 shrink-0" />
               <span>{renderInline(item.text)}</span>
             </li>
@@ -136,7 +136,7 @@ function MarkdownBlock({ text }: { text: string }) {
       nodes.push(
         <ol key={`ol-${i}`} className="my-2 space-y-1 list-decimal list-inside">
           {items.map((item, ii) => (
-            <li key={ii} className="text-sm text-neutral-700 leading-relaxed">{renderInline(item)}</li>
+            <li key={ii} className="text-sm text-foreground/75 leading-relaxed">{renderInline(item)}</li>
           ))}
         </ol>
       );
@@ -144,7 +144,7 @@ function MarkdownBlock({ text }: { text: string }) {
     }
     if (line.trim() === "") { i++; continue; }
     nodes.push(
-      <p key={i} className="text-sm text-neutral-700 leading-relaxed mb-2">{renderInline(line)}</p>
+      <p key={i} className="text-sm text-foreground/75 leading-relaxed mb-2">{renderInline(line)}</p>
     );
     i++;
   }
@@ -337,9 +337,9 @@ export function AiSummary({ deep }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-foreground/8 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-50 flex items-center justify-between gap-4 flex-wrap">
+      <div className="px-6 py-4 border-b border-foreground/5 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -348,16 +348,16 @@ export function AiSummary({ deep }: Props) {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <div className="text-sm font-semibold text-neutral-900">
+            <div className="text-sm font-semibold text-foreground">
               {lang === "en" ? "AI Data Analysis" : "ИИ-анализ данных"}
             </div>
-            <div className="text-xs text-neutral-400">Mistral Large · {lang === "en" ? "based on current data" : "на основе текущих данных"}</div>
+            <div className="text-xs text-foreground/40">Mistral Large · {lang === "en" ? "based on current data" : "на основе текущих данных"}</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Language toggle */}
-          <div className="flex rounded-lg overflow-hidden border border-neutral-200 text-xs font-semibold">
+          <div className="flex rounded-lg overflow-hidden border border-foreground/15 text-xs font-semibold">
             {(["ru", "en"] as const).map((l) => (
               <button
                 key={l}
@@ -369,7 +369,7 @@ export function AiSummary({ deep }: Props) {
                 className="px-3 py-1.5 transition-colors"
                 style={lang === l
                   ? { background: "#6366f1", color: "white" }
-                  : { background: "white", color: "#9ca3af" }
+                  : { background: "var(--surface)", color: "#9ca3af" }
                 }
               >
                 {l.toUpperCase()}
@@ -383,7 +383,7 @@ export function AiSummary({ deep }: Props) {
               {speechStatus === "idle" && (
                 <button
                   onClick={play}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all font-medium"
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-[#6366f1]/10 transition-all font-medium"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
                   {lang === "en" ? "Listen" : "Озвучить"}
@@ -414,12 +414,12 @@ export function AiSummary({ deep }: Props) {
                     </span>
                   )}
                   <button onClick={pause}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 transition-all font-medium"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#6366f1]/10 border border-indigo-200 text-indigo-600 hover:bg-[#6366f1]/15 transition-all font-medium"
                   >
                     {lang === "en" ? "Pause" : "Пауза"}
                   </button>
                   <button onClick={stop}
-                    className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-all"
+                    className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border border-foreground/15 text-foreground/50 hover:bg-foreground/[0.04] transition-all"
                   >
                     <Square className="w-3 h-3" />
                   </button>
@@ -428,13 +428,13 @@ export function AiSummary({ deep }: Props) {
               {speechStatus === "paused" && (
                 <div className="flex items-center gap-1">
                   <button onClick={resume}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all font-medium"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-[#6366f1]/10 transition-all font-medium"
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                     {lang === "en" ? "Resume" : "Продолжить"}
                   </button>
                   <button onClick={stop}
-                    className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-all"
+                    className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border border-foreground/15 text-foreground/50 hover:bg-foreground/[0.04] transition-all"
                   >
                     <Square className="w-3 h-3" />
                   </button>
@@ -442,7 +442,7 @@ export function AiSummary({ deep }: Props) {
               )}
               <button
                 onClick={copy}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-foreground/15 text-foreground/60 hover:bg-foreground/[0.04] transition-all"
               >
                 {copied
                   ? <><Check className="w-3.5 h-3.5 text-green-500 mr-1" />{lang === "en" ? "Copied" : "Скопировано"}</>
@@ -471,13 +471,13 @@ export function AiSummary({ deep }: Props) {
       {status === "idle" && (
         <div className="px-6 py-12 flex flex-col items-center gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,#eef2ff,#f5f3ff)" }}>
+            style={{ background: "color-mix(in srgb, #6366f1 14%, transparent)" }}>
             <Sparkles className="w-7 h-7 text-indigo-400" />
           </div>
-          <div className="text-sm font-medium text-neutral-700">
+          <div className="text-sm font-medium text-foreground/75">
             {lang === "en" ? "Ready to analyse" : "Готов к анализу"}
           </div>
-          <div className="text-xs text-neutral-400 max-w-sm">
+          <div className="text-xs text-foreground/40 max-w-sm">
             {lang === "en"
               ? "Mistral Large will analyse data across all passport types, WMHV accessibility categories, adaptation levels and districts — with concrete recommendations."
               : "Mistral Large проанализирует данные по всем типам паспортов, категориям КОЗС, адаптации и районам — и даст конкретные рекомендации."}

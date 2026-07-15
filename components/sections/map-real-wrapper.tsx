@@ -21,8 +21,10 @@ interface Props {
   data: MapData;
   preview?: boolean;
   fullscreen?: boolean;
+  title?: string;
+  backHref?: string;
 }
 
-export function MapRealWrapper({ data, preview = true, fullscreen = false }: Props) {
-  return <MapReal data={data} preview={preview} fullscreen={fullscreen} />;
+export function MapRealWrapper({ data, preview = true, fullscreen = false, title, backHref }: Props) {
+  return <MapReal data={data} preview={preview} fullscreen={fullscreen} title={title} backHref={backHref} />;
 }

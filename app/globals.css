@@ -1,16 +1,36 @@
 @import "tailwindcss";
 
+/* Class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
+  --background: #f0f4f8;
   --foreground: #0f172a;
+  --foreground-muted: rgb(15 23 42 / 0.5);
+  --border: rgb(15 23 42 / 0.12);
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
   --brand: #3772ff;
   --radius: 0.75rem;
+}
+
+.dark {
+  --background: #0d1117;
+  --foreground: #dde1ea;
+  --foreground-muted: rgb(221 225 234 / 0.5);
+  --border: rgb(255 255 255 / 0.1);
+  --surface: #161c2b;
+  --surface-muted: #1a2235;
+  --brand: #4b8eff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-brand: var(--brand);
+  --color-border: var(--border);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
@@ -32,7 +52,7 @@ body {
 }
 
 .brand-gradient {
-  background: linear-gradient(135deg, #12263a 0%, #1e263e 30%, #29358f 65%, #3772ff 100%);
+  background: linear-gradient(135deg, #040d14 0%, #071a24 35%, #0a2a3a 65%, #0d3348 100%);
 }
 
 .text-brand-gradient {

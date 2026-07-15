@@ -4,10 +4,15 @@ import {
   ResponsiveContainer, Legend,
 } from "recharts";
 import type { ActivityKozs } from "@/lib/api";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface Props { data: ActivityKozs[] }
 
 export function ActivityKozsChart({ data }: Props) {
+  const { resolvedTheme } = useTheme();
+  const tickFill = resolvedTheme === "dark" ? "rgba(255,255,255,0.4)" : "#9ca3af";
+  const tickFillStrong = resolvedTheme === "dark" ? "rgba(255,255,255,0.55)" : "#6b7280";
+
   const chartData = data
     .filter((d) => d.type_of_activity__name_ru)
     .slice(0, 12)
@@ -25,23 +30,26 @@ export function ActivityKozsChart({ data }: Props) {
     }));
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 p-6">
-      <h3 className="font-semibold text-neutral-900 text-sm mb-1">Доступность по видам деятельности</h3>
-      <p className="text-xs text-neutral-400 mb-5">Число объектов с оценкой «Доступно» по К/О/С/З</p>
+    <div className="bg-surface rounded-2xl border border-foreground/8 p-6">
+      <h3 className="font-semibold text-foreground text-sm mb-1">Доступность по видам деятельности</h3>
+      <p className="text-xs text-foreground/40 mb-5">Число объектов с оценкой «Доступно» по К/О/С/З</p>
       <ResponsiveContainer width="100%" height={320}>
         <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 10, fill: tickFill }} axisLine={false} tickLine={false} />
           <YAxis
             type="category"
             dataKey="name"
             width={130}
-            tick={{ fontSize: 10, fill: "#6b7280" }}
+            tick={{ fontSize: 10, fill: tickFillStrong }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
-            contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+            contentStyle={{
+              borderRadius: "12px", border: "1px solid var(--border)", fontSize: "12px",
+              background: "var(--surface)", color: "var(--foreground)",
+            }}
             formatter={(v, name) => [(v as number).toLocaleString("ru-RU"), name]}
           />
           <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />

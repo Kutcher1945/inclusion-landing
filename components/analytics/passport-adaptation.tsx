@@ -24,11 +24,11 @@ function AdaptCard({ label, color, adaptation }: PassportType) {
   const total = adaptation.total || 1;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 p-5">
+    <div className="bg-surface rounded-2xl border border-foreground/8 p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-sm font-semibold text-neutral-900">{label}</div>
-          <div className="text-xs text-neutral-400 mt-0.5">{adaptation.total.toLocaleString("ru-RU")} паспортов</div>
+          <div className="text-sm font-semibold text-foreground">{label}</div>
+          <div className="text-xs text-foreground/40 mt-0.5">{adaptation.total.toLocaleString("ru-RU")} паспортов</div>
         </div>
         <div
           className="text-2xl font-bold tabular-nums"
@@ -57,9 +57,9 @@ function AdaptCard({ label, color, adaptation }: PassportType) {
           return (
             <div key={key} className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />
-              <span className="text-xs text-neutral-500 flex-1">{lbl}</span>
-              <span className="text-xs tabular-nums text-neutral-600 font-medium">{count.toLocaleString("ru-RU")}</span>
-              <span className="text-xs text-neutral-400 w-8 text-right">{pct}%</span>
+              <span className="text-xs text-foreground/50 flex-1">{lbl}</span>
+              <span className="text-xs tabular-nums text-foreground/60 font-medium">{count.toLocaleString("ru-RU")}</span>
+              <span className="text-xs text-foreground/40 w-8 text-right">{pct}%</span>
             </div>
           );
         })}

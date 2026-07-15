@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { MapData, MapPoint } from "@/lib/api";
-import { Search, X, MapPin, ArrowRight, ChevronRight, PenLine, Square, Trash2, Download } from "lucide-react";
+import { Search, X, MapPin, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, PenLine, Square, Trash2, Download } from "lucide-react";
 import Link from "next/link";
 
 // ── Geometry helpers ──────────────────────────────────────────────────────────
@@ -102,10 +102,10 @@ function VirtualList({
 }
 
 const STATUS_META = {
-  accessible:   { color: "#10b981", label: "Доступен",    bg: "#ecfdf5" },
-  partial:      { color: "#f59e0b", label: "Частично",    bg: "#fffbeb" },
-  inaccessible: { color: "#ef4444", label: "Не доступен", bg: "#fff1f2" },
-  unknown:      { color: "#9ca3af", label: "Нет оценки",  bg: "#f9fafb" },
+  accessible:   { color: "#10b981", label: "Доступен",    bg: "#ecfdf5", caption: "полностью доступно" },
+  partial:      { color: "#f59e0b", label: "Частично",    bg: "#fffbeb", caption: "частично доступно" },
+  inaccessible: { color: "#ef4444", label: "Не доступен", bg: "#fff1f2", caption: "недоступно для МГН" },
+  unknown:      { color: "#9ca3af", label: "Нет оценки",  bg: "#f9fafb", caption: "требуют оценки" },
 } as const;
 
 const KOZS_NAMES:  Record<string, string> = { k: "Кресло", o: "Опора", s: "Слух", z: "Зрение" };
@@ -115,6 +115,8 @@ interface Props {
   data: MapData;
   preview?: boolean;
   fullscreen?: boolean;
+  title?: string;
+  backHref?: string;
 }
 
 // ── Object card popup ────────────────────────────────────────────────────────
@@ -373,7 +375,7 @@ function LeafletMap({
 
 // ── Fullscreen layout ────────────────────────────────────────────────────────
 
-function FullscreenMap({ data }: { data: MapData }) {
+function FullscreenMap({ data, title = "Карта объектов", backHref }: { data: MapData; title?: string; backHref?: string }) {
   const [selected, setSelected] = useState<MapPoint | null>(null);
   const [filter, setFilter]     = useState<string>("all");
   const [kozsFilter, setKozsFilter] = useState<"k"|"o"|"z"|"s"|null>(null);
@@ -454,6 +456,38 @@ function FullscreenMap({ data }: { data: MapData }) {
 
   return (
     <div className="w-full h-full relative">
+      {/* ── Header bar ── */}
+      <header className="absolute top-0 inset-x-0 h-14 z-[1200] flex items-center gap-3 px-4 bg-white border-b border-neutral-200/80 shadow-sm">
+        {backHref && (
+          <Link
+            href={backHref}
+            className="flex items-center gap-1.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Назад
+          </Link>
+        )}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-50 shrink-0">
+          <div
+            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg,#29358f,#3772ff)" }}
+          >
+            <MapPin className="w-3 h-3 text-white" />
+          </div>
+          <span className="font-semibold text-neutral-900 text-sm">{title}</span>
+          <span className="text-xs text-neutral-400 border-l border-neutral-200 pl-2 ml-1">
+            {data.with_coords.toLocaleString("ru-RU")} на карте
+          </span>
+        </div>
+
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors shrink-0"
+        >
+          <ChevronRight className={`w-4 h-4 transition-transform ${sidebarOpen ? "rotate-180" : "rotate-0"}`} />
+        </button>
+      </header>
+
       {/* Map fills entire screen */}
       <LeafletMap
         points={filteredPoints}
@@ -512,30 +546,7 @@ function FullscreenMap({ data }: { data: MapData }) {
       )}
 
       {/* ── Floating filter toolbar ── */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1100] flex flex-col items-center gap-2">
-        {/* Row 1: Status */}
-        <div className="flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-lg shadow-black/10 border border-neutral-200/80">
-          {(["all", "accessible", "partial", "inaccessible", "unknown"] as const).map((f) => {
-            const meta   = f === "all" ? null : STATUS_META[f];
-            const count  = f === "all" ? data.with_coords : counts[f];
-            const active = filter === f;
-            return (
-              <button key={f}
-                onClick={() => setFilter(f)}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition-all"
-                style={active
-                  ? { background: meta?.color ?? "#111827", color: "white" }
-                  : { background: "transparent", color: "#6b7280" }
-                }
-              >
-                {meta && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: active ? "white" : meta.color }} />}
-                {f === "all" ? "Все" : meta!.label}
-                <span className={`tabular-nums ${active ? "opacity-70" : "opacity-50"}`}>{count.toLocaleString("ru-RU")}</span>
-              </button>
-            );
-          })}
-        </div>
-
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[1100] flex flex-col items-center gap-2">
         {/* Row 2: КОЗС — counts reflect selected status */}
         <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-lg shadow-black/10 border border-neutral-200/80">
           <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wide shrink-0">По МГН</span>
@@ -603,22 +614,67 @@ function FullscreenMap({ data }: { data: MapData }) {
         </div>
       </div>
 
-      {/* ── Sidebar toggle button ── */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute top-4 right-4 z-[1100] bg-white rounded-xl p-2.5 shadow-lg shadow-black/10 border border-neutral-200/80 text-neutral-500 hover:text-neutral-900 transition-colors"
-      >
-        <ChevronRight className={`w-4 h-4 transition-transform ${sidebarOpen ? "rotate-0" : "rotate-180"}`} />
-      </button>
+      {/* ── Status stat cards (ALSECO-style vertical stack) ── */}
+      <div className="absolute top-16 right-0 z-[1100] flex flex-col gap-2.5 max-h-[calc(100%-4.5rem)] overflow-y-auto pb-2">
+        {(["all", "accessible", "partial", "inaccessible", "unknown"] as const).map((f) => {
+          const meta   = f === "all" ? null : STATUS_META[f];
+          const count  = f === "all" ? data.with_coords : counts[f];
+          const active = filter === f;
+          const color  = meta?.color ?? "#3772ff";
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="text-left bg-white/95 backdrop-blur-xl rounded-l-xl py-3.5 px-4 shadow-sm w-[170px] transition-all"
+              style={{
+                borderLeft: `3px solid ${color}`,
+                boxShadow: active ? `0 0 0 2px ${color}40` : undefined,
+              }}
+            >
+              <p className="text-[8.5px] uppercase tracking-[0.15em] text-gray-500 mb-1 font-medium truncate">
+                {f === "all" ? "Всего объектов" : meta!.label.toUpperCase()}
+              </p>
+              <p className="text-[2.75rem] font-bold leading-none tabular-nums" style={{ color }}>
+                {count.toLocaleString("ru-RU")}
+              </p>
+              <p className="text-[7.5px] mt-1.5 leading-tight" style={{ color: `${color}99` }}>
+                {f === "all" ? "объектов на карте" : meta!.caption}
+              </p>
+            </button>
+          );
+        })}
+      </div>
 
-      {/* ── Right sidebar ── */}
+      {/* ── Left sidebar ── */}
       <div
-        className={`absolute top-0 right-0 h-full z-[1050] flex flex-col bg-white/95 backdrop-blur-sm border-l border-neutral-200/80 shadow-2xl shadow-black/10 transition-all duration-300 ${
-          sidebarOpen ? "w-72 translate-x-0" : "w-72 translate-x-full"
+        className={`absolute top-14 left-0 h-[calc(100%-3.5rem)] z-[1050] flex flex-col bg-white/95 backdrop-blur-sm border-r border-neutral-200/80 shadow-2xl shadow-black/10 transition-all duration-300 ${
+          sidebarOpen ? "w-72 translate-x-0" : "w-72 -translate-x-full"
         }`}
       >
-        {/* Sidebar header */}
-        <div className="px-4 pt-24 pb-3 border-b border-neutral-100">
+        {/* Sidebar header — stats row + collapse, then search */}
+        <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50/60 shrink-0">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Объекты на карте</p>
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-lg flex items-center justify-center bg-blue-100 shrink-0">
+                <MapPin className="h-3 w-3 text-[#3772ff]" />
+              </div>
+              <p className="text-sm font-bold tabular-nums leading-tight text-neutral-900 whitespace-nowrap">
+                {listItems.length.toLocaleString("ru-RU")}
+                <span className="text-xs font-normal text-neutral-400 ml-1">/ {data.with_coords.toLocaleString("ru-RU")}</span>
+              </p>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="h-6 w-6 rounded-lg flex items-center justify-center hover:bg-neutral-200/60 transition-colors shrink-0"
+                title="Свернуть"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-neutral-400" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pt-3 pb-3 border-b border-neutral-100">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-300" />
             <input
@@ -767,8 +823,8 @@ function PreviewMap({ data }: { data: MapData }) {
 
 // ── Export ───────────────────────────────────────────────────────────────────
 
-export function MapReal({ data, preview = false, fullscreen = false }: Props) {
-  if (fullscreen) return <FullscreenMap data={data} />;
+export function MapReal({ data, preview = false, fullscreen = false, title, backHref }: Props) {
+  if (fullscreen) return <FullscreenMap data={data} title={title} backHref={backHref} />;
   if (preview)    return <PreviewMap data={data} />;
 
   // standalone (unused currently, kept as fallback)

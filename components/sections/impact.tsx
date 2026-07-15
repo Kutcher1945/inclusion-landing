@@ -1,68 +1,74 @@
 const stats = [
-  { value: "40 000+", label: "объектов в реестре", sub: "учреждения, остановки, гостиницы, подъезды" },
-  { value: "97", label: "показателей доступности", sub: "по каждому паспорту объекта" },
-  { value: "4", label: "категории инвалидности", sub: "К · О · С · З" },
-  { value: "8", label: "районов города", sub: "полное покрытие Алматы" },
+  { value: "40 000+", label: "объектов в реестре",      sub: "учреждения, остановки, гостиницы, подъезды", color: "#3772ff", bg: "#eff4ff" },
+  { value: "97",      label: "показателей доступности", sub: "по каждому паспорту объекта",               color: "#8b5cf6", bg: "#f5f3ff" },
+  { value: "4",       label: "категории инвалидности",  sub: "К · О · С · З",                             color: "#10b981", bg: "#ecfdf5" },
+  { value: "8",       label: "районов города",          sub: "полное покрытие Алматы",                    color: "#f59e0b", bg: "#fffbeb" },
 ];
 
 export function Impact() {
   return (
-    <section className="py-28 brand-gradient relative overflow-hidden">
-      {/* Grid bg */}
+    <section className="py-28 bg-white relative overflow-hidden">
+      {/* Decorative large circle */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
+        className="absolute -right-48 -top-48 w-[600px] h-[600px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(55,114,255,0.04) 0%, transparent 65%)" }}
       />
-      {/* Glow */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full blur-3xl opacity-15 pointer-events-none"
-        style={{ background: "radial-gradient(circle, #3772ff, transparent 70%)" }}
+        className="absolute -left-32 bottom-0 w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 65%)" }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
+      <div className="relative max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-block text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full mb-4"
-            style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
+          <span className="inline-block text-[11px] font-semibold tracking-[0.2em] uppercase px-3 py-1 rounded-full mb-4 text-[#3772ff] bg-[#eff4ff] border border-[#3772ff]/15">
             Влияние
           </span>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4 tracking-tight">
             Используется госорганами
           </h2>
-          <p className="text-lg max-w-lg mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-neutral-500 text-lg max-w-lg mx-auto">
             Реальные данные, на основе которых принимаются решения об адаптации городской инфраструктуры
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {stats.map((s, i) => (
             <div
               key={s.label}
-              className="animate-fade-in-up text-center p-8 rounded-2xl"
+              className="group bg-white rounded-3xl border border-neutral-100 p-7 overflow-hidden relative transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-neutral-200"
               style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                animationDelay: `${i * 0.1}s`,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)",
+                animationDelay: `${i * 0.08}s`,
               }}
             >
-              <div className="text-4xl md:text-5xl font-bold text-white mb-2">{s.value}</div>
-              <div className="text-sm font-semibold mb-1" style={{ color: "rgba(255,255,255,0.8)" }}>
-                {s.label}
+              {/* Colored top bar */}
+              <div
+                className="absolute top-0 left-0 right-0 h-[3px]"
+                style={{ background: s.color }}
+              />
+              {/* Icon bg dot */}
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-5"
+                style={{ background: s.bg }}
+              >
+                <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
               </div>
-              <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {s.sub}
+
+              <div
+                className="text-4xl md:text-5xl font-black tabular-nums leading-none mb-2"
+                style={{ color: s.color }}
+              >
+                {s.value}
               </div>
+              <div className="text-sm font-semibold text-neutral-800 mb-1 leading-tight">{s.label}</div>
+              <div className="text-xs text-neutral-400 leading-snug">{s.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Bottom note */}
-        <p className="text-center mt-12 text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-center mt-10 text-[11px] uppercase tracking-[0.2em] text-neutral-400">
           Акимат города Алматы · Отдел по поддержке людей с инвалидностью
         </p>
       </div>

@@ -3,8 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import { NavUserMenu } from "./nav-user-menu";
+import { ShineSweep } from "./ShineSweep";
+import { cn } from "@/lib/utils";
 
-export function Nav() {
+type Props = { user?: { username: string } | null };
+
+export function Nav({ user = null }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -30,17 +35,36 @@ export function Nav() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        {/* Logo: PNG has ~15% whitespace on each side; overdraw then clip to h-20 */}
-        <Link href="/" className="flex-shrink-0 overflow-hidden h-20 flex items-center -ml-4">
-          <Image
-            src={scrolled ? "/logo-dark-letters.png" : "/logo-white-letters.png"}
-            alt="Инклюзия"
-            width={380}
-            height={114}
-            className="w-auto"
-            style={{ height: "114px", marginTop: "-17px", marginBottom: "-17px" }}
-            priority
-          />
+        {/* Logo: white/dark variants have slightly different intrinsic ratios (1286x362 / 1189x320). */}
+        <Link
+          href="/"
+          className={cn(
+            "group relative overflow-hidden flex-shrink-0 flex items-center rounded-xl border px-3 py-2 transition-colors duration-200",
+            scrolled
+              ? "border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300"
+              : "border-white/[0.12] hover:bg-white/[0.05] hover:border-white/[0.25]",
+          )}
+        >
+          <ShineSweep />
+          {scrolled ? (
+            <Image
+              src="/logo-dark-letters.png"
+              alt="Инклюзия"
+              width={1189}
+              height={320}
+              className="relative z-10 w-auto h-12"
+              priority
+            />
+          ) : (
+            <Image
+              src="/logo-white-letters.png"
+              alt="Инклюзия"
+              width={1286}
+              height={362}
+              className="relative z-10 w-auto h-12"
+              priority
+            />
+          )}
         </Link>
 
         {/* Desktop nav */}
@@ -60,16 +84,20 @@ export function Nav() {
 
         {/* CTA */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="#cta"
-            className="text-sm font-medium px-4 py-2 rounded-xl border transition-all hover:bg-[#3772ff] hover:text-white hover:border-[#3772ff]"
-            style={{
-              borderColor: scrolled ? "#e5e7eb" : "rgba(255,255,255,0.3)",
-              color: scrolled ? "#374151" : "white",
-            }}
-          >
-            Запросить доступ
-          </Link>
+          {user ? (
+            <NavUserMenu username={user.username} scrolled={scrolled} />
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm font-medium px-4 py-2 rounded-xl border transition-all hover:bg-[#3772ff] hover:text-white hover:border-[#3772ff]"
+              style={{
+                borderColor: scrolled ? "#e5e7eb" : "rgba(255,255,255,0.3)",
+                color: scrolled ? "#374151" : "white",
+              }}
+            >
+              Войти
+            </Link>
+          )}
           <Link
             href="/map"
             className="text-sm font-medium px-4 py-2 rounded-xl text-white transition-all hover:opacity-90"
@@ -101,13 +129,29 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <Link
-            href="#cta"
-            className="text-sm font-medium text-center py-2 rounded-xl border border-neutral-200 text-neutral-700"
-            onClick={() => setOpen(false)}
-          >
-            Запросить доступ
-          </Link>
+          {user ? (
+            <div className="flex items-center justify-between py-2 px-1">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white"
+                  style={{ background: "linear-gradient(135deg, #3772ff, #6aa3ff)" }}>
+                  {user.username.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="text-sm font-medium text-neutral-700">{user.username}</span>
+              </div>
+              <Link href="/passports" onClick={() => setOpen(false)}
+                className="text-sm text-[#3772ff] font-medium">
+                Панель →
+              </Link>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm font-medium text-center py-2 rounded-xl border border-neutral-200 text-neutral-700"
+              onClick={() => setOpen(false)}
+            >
+              Войти
+            </Link>
+          )}
           <Link
             href="/map"
             className="text-sm font-medium text-center py-2 rounded-xl text-white"
