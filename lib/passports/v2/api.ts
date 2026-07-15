@@ -4,7 +4,7 @@ import type { PassportV2, PassportV2Patch, ChecklistSchema, PassportPhoto } from
 import { passportV2Schema, checklistSchemaItemSchema, passportPhotoSchema } from "./types";
 import { z } from "zod";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://green-admin.smartalmaty.kz";
+const BASE = process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://green-admin.smartalmaty.kz";
 
 // ─── Auth header ──────────────────────────────────────────────────────────────
 
