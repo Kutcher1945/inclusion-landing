@@ -19,6 +19,8 @@ const ERROR_MESSAGES: Record<NonNullable<ServerError>, string> = {
   upstream_error: "Ошибка сервера. Повторите попытку позже.",
 };
 
+const BACKEND = process.env.NEXT_PUBLIC_API_BASE_URL || "https://green-admin.smartalmaty.kz";
+
 export function LoginForm({ redirectTo }: Props) {
   const router = useRouter();
   const [serverError, setServerError] = useState<ServerError>(null);
@@ -32,24 +34,34 @@ export function LoginForm({ redirectTo }: Props) {
   async function onSubmit(credentials: LoginCredentials) {
     setServerError(null);
     try {
-      const res = await fetch("/api/auth/login", {
+      // Call Django directly from the browser (same internal network as the backend)
+      const tokenRes = await fetch(`${BACKEND}/auth/token/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
+      if (tokenRes.status === 401) { setServerError("invalid_credentials"); return; }
+      if (!tokenRes.ok)            { setServerError("upstream_error"); return; }
 
-      if (res.ok) {
-        router.push(redirectTo);
-        return;
-      }
+      const { access, refresh } = await tokenRes.json() as { access: string; refresh: string };
 
-      const body = await res.json().catch(() => ({}));
-      const code = body?.error;
-      if (code === "invalid_credentials" || code === "not_staff" || code === "upstream_error") {
-        setServerError(code);
-      } else {
-        setServerError("upstream_error");
-      }
+      // Verify is_staff directly from Django
+      const meRes = await fetch(`${BACKEND}/inclusion-api/admin/me/`, {
+        headers: { Authorization: `Bearer ${access}` },
+      });
+      if (!meRes.ok) { setServerError("upstream_error"); return; }
+      const user = await meRes.json() as { is_staff?: boolean };
+      if (!user.is_staff) { setServerError("not_staff"); return; }
+
+      // Ask Next.js to store the tokens as httpOnly cookies (no Django call here)
+      const sessionRes = await fetch("/api/auth/set-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access, refresh }),
+      });
+      if (!sessionRes.ok) { setServerError("upstream_error"); return; }
+
+      router.push(redirectTo);
     } catch {
       setServerError("upstream_error");
     }
