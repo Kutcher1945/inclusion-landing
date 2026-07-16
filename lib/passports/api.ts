@@ -48,7 +48,12 @@ export async function fetchPassportList(
   if (filters.ordering)             qs.set("ordering",              filters.ordering);
 
   const url = `${BACKEND}/inclusion-api/admin/object-passports/?${qs.toString()}`;
-  let res = await fetchWithAuth(url, access);
+  let res: Response;
+  try {
+    res = await fetchWithAuth(url, access);
+  } catch {
+    return null;
+  }
 
   if (res.status === 401 && refresh) {
     try {
@@ -56,7 +61,7 @@ export async function fetchPassportList(
       res = await fetchWithAuth(url, newAccess);
     } catch (error: unknown) {
       if (error instanceof AuthError) return null;
-      throw error;
+      return null;
     }
   }
 
@@ -88,9 +93,12 @@ export async function fetchReferenceData(): Promise<ReferenceData> {
     getList("/inclusion-api/departments/?page_size=200"),
   ]);
 
-  if (!statuses || !deliveryStatuses || !districts || !activityTypes || !activitySubTypes) {
-    throw new Error("Failed to load reference data from backend");
-  }
-
-  return { statuses, deliveryStatuses, districts, activityTypes, activitySubTypes, departments: departments ?? [] };
+  return {
+    statuses:           statuses          ?? [],
+    deliveryStatuses:   deliveryStatuses  ?? [],
+    districts:          districts         ?? [],
+    activityTypes:      activityTypes     ?? [],
+    activitySubTypes:   activitySubTypes  ?? [],
+    departments:        departments       ?? [],
+  };
 }

@@ -122,7 +122,22 @@ export default async function PassportsPage({ searchParams }: Props) {
     fetchReferenceData(),
   ]);
 
-  if (!passportData) redirect("/login");
+  if (passportData === null) {
+    const { readSessionTokens } = await import("@/lib/auth/session");
+    const { access } = await readSessionTokens();
+    if (!access) redirect("/login");
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-foreground/[0.06] flex items-center justify-center">
+          <Building2 className="w-6 h-6 text-foreground/30" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground/70">Сервер недоступен</p>
+          <p className="text-xs text-foreground/40 mt-1">Бэкенд API не отвечает. Попробуйте обновить страницу.</p>
+        </div>
+      </div>
+    );
+  }
 
   const { count, results } = passportData;
   const totalPages = Math.max(1, Math.ceil(count / PASSPORT_PAGE_SIZE));
