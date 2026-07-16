@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { deletePassport } from "@/lib/passports/browser-api";
 
 type Props = { id: number };
 
@@ -16,8 +17,8 @@ export function DeletePassportButton({ id }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/passports/${id}`, { method: "DELETE" });
-      if (!res.ok) {
+      const ok = await deletePassport(id);
+      if (!ok) {
         setError("Не удалось удалить запись. Попробуйте ещё раз.");
         setConfirming(false);
         return;

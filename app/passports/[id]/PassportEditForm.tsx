@@ -140,14 +140,10 @@ export function PassportEditForm({ formData, criterionDisplay, refs }: Props) {
 
   async function onSubmit(values: PassportFormValues) {
     setSaveError(null); setSaved(false);
-    const res = await fetch(`/api/passports/${formData.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildPatchPayload(values, formData)),
-    });
-    if (!res.ok) { setSaveError("Не удалось сохранить. Проверьте данные и попробуйте снова."); return; }
+    const { patchPassport } = await import("@/lib/passports/browser-api");
+    const result = await patchPassport(formData.id, buildPatchPayload(values, formData) as Record<string, unknown>);
+    if (!result) { setSaveError("Не удалось сохранить. Проверьте данные и попробуйте снова."); return; }
     setSaved(true);
-    router.refresh();
   }
 
   const statusOptions   = refs.statuses.map((s) => ({ value: s.id, label: s.name_ru ?? `#${s.id}` }));

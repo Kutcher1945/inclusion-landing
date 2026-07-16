@@ -1,7 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { decodeJwtPayload } from "./jwt";
-import type { TokenPair } from "./backend";
+
+export type TokenPair = { access: string; refresh: string };
 
 export const ACCESS_TOKEN_COOKIE = "passport_access_token";
 export const REFRESH_TOKEN_COOKIE = "passport_refresh_token";

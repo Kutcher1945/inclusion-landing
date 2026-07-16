@@ -1,9 +1,17 @@
+"use client";
+
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Plus, Building2 } from "lucide-react";
-import { Suspense } from "react";
-import { fetchPassportList, fetchReferenceData, PASSPORT_PAGE_SIZE } from "@/lib/passports/api";
-import type { PassportListFilters } from "@/lib/passports/api";
+import {
+  fetchPassportList,
+  fetchReferenceData,
+  PASSPORT_PAGE_SIZE,
+  type PassportListFilters,
+  type PaginatedPassports,
+  type ReferenceData,
+} from "@/lib/passports/browser-api";
 import { cn } from "@/lib/utils";
 import type { RefItem } from "@/lib/passports/types";
 import { toAbsoluteUrl } from "@/lib/passports/cdn";
@@ -21,54 +29,40 @@ import {
   PassportRowPdfButton,
 } from "./PassportSelection";
 
-// Mirrors BULK_PDF_EXPORT_LIMIT in green_backend/inclusion/admin_api/views.py — keep in sync.
 const BULK_PDF_EXPORT_LIMIT = 300;
 
-type Props = {
-  searchParams: Promise<{
-    page?: string;
-    search?: string;
-    district?: string;
-    status?: string;
-    delivery_status?: string;
-    type_of_activity?: string;
-    sub_type_of_activity?: string;
-    tab?: string;
-    sort?: string;
-  }>;
+const EMPTY_REFS: ReferenceData = {
+  statuses: [], deliveryStatuses: [], districts: [],
+  activityTypes: [], activitySubTypes: [], departments: [],
 };
 
 function buildLookup(items: RefItem[]): Map<number, string> {
   return new Map(items.map((item) => [item.id, item.name_ru ?? `#${item.id}`]));
 }
 
-/** Shared filter params every link on this page needs to preserve. */
 function baseParams(filters: PassportListFilters, tab: string): URLSearchParams {
   const params = new URLSearchParams();
   if (tab === "deleted") params.set("tab", "deleted");
-  if (filters.search)                params.set("search",                filters.search);
-  if (filters.district)              params.set("district",              filters.district);
-  if (filters.status)                params.set("status",                filters.status);
-  if (filters.delivery_status)       params.set("delivery_status",       filters.delivery_status);
-  if (filters.type_of_activity)      params.set("type_of_activity",      filters.type_of_activity);
-  if (filters.sub_type_of_activity)  params.set("sub_type_of_activity",  filters.sub_type_of_activity);
-  if (filters.ordering)              params.set("sort",                  filters.ordering);
+  if (filters.search)               params.set("search",               filters.search);
+  if (filters.district)             params.set("district",             filters.district);
+  if (filters.status)               params.set("status",               filters.status);
+  if (filters.delivery_status)      params.set("delivery_status",      filters.delivery_status);
+  if (filters.type_of_activity)     params.set("type_of_activity",     filters.type_of_activity);
+  if (filters.sub_type_of_activity) params.set("sub_type_of_activity", filters.sub_type_of_activity);
+  if (filters.ordering)             params.set("sort",                 filters.ordering);
   return params;
 }
 
-/** Build a bulk-export href (any format) covering every record matching the current filters (no page param — the whole filtered set). */
 function exportHref(format: "pdf" | "excel" | "json" | "geojson", filters: PassportListFilters, tab: string): string {
   return `/passports/export/${format}?${baseParams(filters, tab).toString()}`;
 }
 
-/** Build a pagination href that preserves all active filter/sort params and the current tab. */
 function pageHref(page: number, filters: PassportListFilters, tab: string): string {
   const params = baseParams(filters, tab);
   params.set("page", String(page));
   return `/passports?${params.toString()}`;
 }
 
-/** Build a sort-toggle href for a column: unsorted/desc → asc, asc → desc. */
 function sortHref(field: string, filters: PassportListFilters, tab: string): string {
   const isAsc = filters.ordering === field;
   const params = baseParams({ ...filters, ordering: undefined }, tab);
@@ -84,11 +78,8 @@ function SortIndicator({ field, currentSort }: { field: string; currentSort: str
 }
 
 function SortableTh({ field, filters, tab, className, children }: {
-  field: string;
-  filters: PassportListFilters;
-  tab: string;
-  className?: string;
-  children: React.ReactNode;
+  field: string; filters: PassportListFilters; tab: string;
+  className?: string; children: React.ReactNode;
 }) {
   return (
     <th scope="col" className={className}>
@@ -100,46 +91,55 @@ function SortableTh({ field, filters, tab, className, children }: {
   );
 }
 
-export default async function PassportsPage({ searchParams }: Props) {
-  const sp = await searchParams;
-  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  const activeTab = sp.tab === "deleted" ? "deleted" : "active";
+function PassportsContent() {
+  const sp = useSearchParams();
+
+  const page = Math.max(1, parseInt(sp.get("page") ?? "1", 10) || 1);
+  const activeTab = sp.get("tab") === "deleted" ? "deleted" : "active";
   const isDeleted = activeTab === "deleted";
 
   const filters: PassportListFilters = {
-    search:                sp.search                || undefined,
-    district:              sp.district              || undefined,
-    status:                sp.status                || undefined,
-    delivery_status:       sp.delivery_status       || undefined,
-    type_of_activity:      sp.type_of_activity      || undefined,
-    sub_type_of_activity:  sp.sub_type_of_activity  || undefined,
-    show_deleted:          isDeleted,
-    ordering:              sp.sort                  || undefined,
+    search:               sp.get("search")               || undefined,
+    district:             sp.get("district")             || undefined,
+    status:               sp.get("status")               || undefined,
+    delivery_status:      sp.get("delivery_status")      || undefined,
+    type_of_activity:     sp.get("type_of_activity")     || undefined,
+    sub_type_of_activity: sp.get("sub_type_of_activity") || undefined,
+    show_deleted:         isDeleted,
+    ordering:             sp.get("sort")                 || undefined,
   };
 
-  const [passportData, refs] = await Promise.all([
-    fetchPassportList(page, filters),
-    fetchReferenceData(),
+  const [passportData, setPassportData] = useState<PaginatedPassports | null>(null);
+  const [refs, setRefs] = useState<ReferenceData>(EMPTY_REFS);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    Promise.all([fetchPassportList(page, filters), fetchReferenceData()]).then(
+      ([data, refData]) => {
+        if (cancelled) return;
+        setPassportData(data);
+        setRefs(refData);
+        setLoading(false);
+      },
+    );
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    page, activeTab, refreshKey,
+    filters.search, filters.district, filters.status,
+    filters.delivery_status, filters.type_of_activity,
+    filters.sub_type_of_activity, filters.ordering,
   ]);
 
-  if (passportData === null) {
-    const { readSessionTokens } = await import("@/lib/auth/session");
-    const { access } = await readSessionTokens();
-    if (!access) redirect("/login");
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center">
-        <div className="w-12 h-12 rounded-full bg-foreground/[0.06] flex items-center justify-center">
-          <Building2 className="w-6 h-6 text-foreground/30" />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-foreground/70">Сервер недоступен</p>
-          <p className="text-xs text-foreground/40 mt-1">Бэкенд API не отвечает. Попробуйте обновить страницу.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { count, results } = passportData;
+  const count = passportData?.count ?? 0;
+  const results = passportData?.results ?? [];
   const totalPages = Math.max(1, Math.ceil(count / PASSPORT_PAGE_SIZE));
 
   const statusMap   = buildLookup(refs.statuses);
@@ -153,6 +153,28 @@ export default async function PassportsPage({ searchParams }: Props) {
     .some(([, v]) => Boolean(v));
 
   const statusList = refs.statuses;
+
+  if (loading && !passportData) {
+    return (
+      <div className="flex items-center justify-center min-h-[30vh]">
+        <span className="text-sm text-foreground/40">Загрузка…</span>
+      </div>
+    );
+  }
+
+  if (!passportData && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-foreground/[0.06] flex items-center justify-center">
+          <Building2 className="w-6 h-6 text-foreground/30" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground/70">Сервер недоступен</p>
+          <p className="text-xs text-foreground/40 mt-1">Бэкенд API не отвечает. Попробуйте обновить страницу.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PassportSelectionProvider>
@@ -171,9 +193,9 @@ export default async function PassportsPage({ searchParams }: Props) {
         <div className="flex items-center gap-2 shrink-0">
           <PassportActionsMenu
             exportHrefs={{
-              pdf: exportHref("pdf", filters, activeTab),
-              excel: exportHref("excel", filters, activeTab),
-              json: exportHref("json", filters, activeTab),
+              pdf:     exportHref("pdf",     filters, activeTab),
+              excel:   exportHref("excel",   filters, activeTab),
+              json:    exportHref("json",    filters, activeTab),
               geojson: exportHref("geojson", filters, activeTab),
             }}
             filteredCount={count}
@@ -193,7 +215,7 @@ export default async function PassportsPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {/* Toolbar: tabs + filters unified into one card */}
+      {/* Toolbar: tabs + filters */}
       <div className="bg-surface rounded-2xl border border-foreground/8 shadow-sm">
         <div className="flex items-center justify-between gap-4 px-4 pt-4 pb-3 border-b border-foreground/[0.06]">
           <div className="flex items-center gap-1 p-1 bg-foreground/[0.06] rounded-xl w-fit">
@@ -293,7 +315,7 @@ export default async function PassportsPage({ searchParams }: Props) {
               {results.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-5 py-16 text-center text-sm text-foreground/35">
-                    {isDeleted ? "Нет удалённых объектов" : "Объекты не найдены"}
+                    {loading ? "Загрузка…" : isDeleted ? "Нет удалённых объектов" : "Объекты не найдены"}
                   </td>
                 </tr>
               ) : results.map((passport) => {
@@ -312,17 +334,14 @@ export default async function PassportsPage({ searchParams }: Props) {
                 const criteriaTotal = passport.checklist.length;
                 const criteriaPct = criteriaTotal > 0 ? Math.round((criteriaFilled / criteriaTotal) * 100) : 0;
                 const hoverInfo = {
-                  id: passport.id,
-                  name,
-                  address: passport.address,
+                  id: passport.id, name, address: passport.address,
                   district: passport.district ? (districtMap.get(passport.district) ?? null) : null,
                   activityType: passport.type_of_activity ? (typeMap.get(passport.type_of_activity) ?? null) : null,
                   statusLabel: passport.status ? (statusMap.get(passport.status) ?? null) : null,
                   statusVariant: variantKey,
                   deliveryLabel: passport.delivery_status ? (deliveryMap.get(passport.delivery_status) ?? null) : null,
                   deliverySent: passport.delivery_status === 2,
-                  criteriaFilled,
-                  criteriaTotal,
+                  criteriaFilled, criteriaTotal,
                   updatedAt: passport.updated_at,
                 };
 
@@ -334,20 +353,14 @@ export default async function PassportsPage({ searchParams }: Props) {
                       isDeleted ? "opacity-60 hover:opacity-80" : "hover:bg-foreground/[0.025]",
                     )}
                   >
-                    {/* Select */}
                     <td className="px-4 py-3.5 w-10">
                       <PassportRowCheckbox id={passport.id} />
                     </td>
-
-                    {/* ID */}
                     <td className="px-4 py-3.5 w-16">
                       <span className="text-xs font-mono text-foreground/35">#{passport.id}</span>
                     </td>
-
-                    {/* Name + address cell */}
                     <td className="px-5 py-3.5">
                       <PassportHoverPreview photos={hoverPhotos} info={hoverInfo} className="flex items-center gap-3 min-w-0">
-                        {/* Cover photo, falling back to a neutral placeholder */}
                         {coverPhoto ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -368,10 +381,7 @@ export default async function PassportsPage({ searchParams }: Props) {
                             {isDeleted ? (
                               name ?? <em className="not-italic text-foreground/30">Без названия</em>
                             ) : (
-                              <Link
-                                href={`/passports/${passport.id}`}
-                                className="hover:text-brand transition-colors"
-                              >
+                              <Link href={`/passports/${passport.id}`} className="hover:text-brand transition-colors">
                                 {name ?? <em className="not-italic text-foreground/30">Без названия</em>}
                               </Link>
                             )}
@@ -384,8 +394,6 @@ export default async function PassportsPage({ searchParams }: Props) {
                         </div>
                       </PassportHoverPreview>
                     </td>
-
-                    {/* District */}
                     <td className="px-4 py-3.5 hidden lg:table-cell">
                       <span className="text-sm text-foreground/55">
                         {passport.district
@@ -393,8 +401,6 @@ export default async function PassportsPage({ searchParams }: Props) {
                           : <span className="text-foreground/20">—</span>}
                       </span>
                     </td>
-
-                    {/* Activity type */}
                     <td className="px-4 py-3.5 hidden lg:table-cell">
                       <span className="text-xs text-foreground/50 block max-w-[160px] truncate">
                         {passport.type_of_activity
@@ -402,8 +408,6 @@ export default async function PassportsPage({ searchParams }: Props) {
                           : <span className="text-foreground/20">—</span>}
                       </span>
                     </td>
-
-                    {/* Activity subtype */}
                     <td className="px-4 py-3.5 hidden xl:table-cell">
                       <span className="text-xs text-foreground/40 block max-w-[150px] truncate">
                         {passport.sub_type_of_activity
@@ -411,8 +415,6 @@ export default async function PassportsPage({ searchParams }: Props) {
                           : <span className="text-foreground/20">—</span>}
                       </span>
                     </td>
-
-                    {/* Criteria completion */}
                     <td className="px-4 py-3.5 hidden xl:table-cell">
                       {criteriaTotal > 0 ? (
                         <div className="w-24">
@@ -433,8 +435,6 @@ export default async function PassportsPage({ searchParams }: Props) {
                         <span className="text-foreground/20 text-xs">—</span>
                       )}
                     </td>
-
-                    {/* Status */}
                     <td className="px-4 py-3.5">
                       {isDeleted ? (
                         passport.status
@@ -448,8 +448,6 @@ export default async function PassportsPage({ searchParams }: Props) {
                         />
                       )}
                     </td>
-
-                    {/* Delivery / ID */}
                     {isDeleted ? (
                       <td className="px-4 py-3.5 hidden sm:table-cell">
                         <span className="text-sm font-mono font-medium text-foreground/60">#{passport.id}</span>
@@ -464,14 +462,12 @@ export default async function PassportsPage({ searchParams }: Props) {
                           : <span className="text-foreground/20 text-xs">—</span>}
                       </td>
                     )}
-
-                    {/* Actions */}
                     <td className="px-3 py-3.5 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <PassportRowPdfButton id={passport.id} />
                         {isDeleted
-                          ? <RestorePassportButton id={passport.id} />
-                          : <DeleteRowButton id={passport.id} />}
+                          ? <RestorePassportButton id={passport.id} onSuccess={triggerRefresh} />
+                          : <DeleteRowButton id={passport.id} onSuccess={triggerRefresh} />}
                       </div>
                     </td>
                   </tr>
@@ -505,11 +501,9 @@ export default async function PassportsPage({ searchParams }: Props) {
               Назад
             </button>
           )}
-
           <span className="text-sm px-3 py-1.5 font-medium text-foreground/70" aria-current="page">
             {page} / {totalPages}
           </span>
-
           {page < totalPages ? (
             <Link
               href={pageHref(page + 1, filters, activeTab)}
@@ -529,5 +523,13 @@ export default async function PassportsPage({ searchParams }: Props) {
       </nav>
     </div>
     </PassportSelectionProvider>
+  );
+}
+
+export default function PassportsPage() {
+  return (
+    <Suspense>
+      <PassportsContent />
+    </Suspense>
   );
 }

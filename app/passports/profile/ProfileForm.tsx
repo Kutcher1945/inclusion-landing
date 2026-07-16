@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
-import type { CurrentUser } from "@/lib/auth/backend";
+import type { CurrentUser } from "@/lib/auth/schemas";
 
 type Props = { user: CurrentUser };
 

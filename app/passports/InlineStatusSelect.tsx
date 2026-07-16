@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { RefItem } from "@/lib/passports/types";
 
@@ -26,7 +25,6 @@ type Props = {
 };
 
 export function InlineStatusSelect({ id, statusId, statuses }: Props) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [currentId, setCurrentId] = useState(statusId);
@@ -59,13 +57,9 @@ export function InlineStatusSelect({ id, statusId, statuses }: Props) {
     setOpen(false);
     setPending(true);
     try {
-      await fetch(`/api/passports/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newId }),
-      });
+      const { patchPassport } = await import("@/lib/passports/browser-api");
+      await patchPassport(id, { status: newId });
       setCurrentId(newId);
-      router.refresh();
     } finally {
       setPending(false);
     }

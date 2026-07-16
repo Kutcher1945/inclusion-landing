@@ -48,7 +48,7 @@ export function LoginForm({ redirectTo }: Props) {
       const sessionRes = await fetch("/api/auth/set-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access, refresh }),
+        body: JSON.stringify({ access, refresh, username: credentials.username }),
       });
       if (!sessionRes.ok) { setServerError("upstream_error"); return; }
 

@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-type Props = { id: number };
+import { deletePassport } from "@/lib/passports/browser-api";
 
-export function DeleteRowButton({ id }: Props) {
-  const router = useRouter();
+type Props = { id: number; onSuccess?: () => void };
+
+export function DeleteRowButton({ id, onSuccess }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/passports/${id}`, { method: "DELETE" });
-      if (res.ok) router.refresh();
+      const ok = await deletePassport(id);
+      if (ok) onSuccess?.();
     } finally {
       setLoading(false);
     }

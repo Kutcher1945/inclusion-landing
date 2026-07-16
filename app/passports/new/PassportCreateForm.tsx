@@ -122,33 +122,23 @@ export function PassportCreateForm({ refs, criterionDisplay }: Props) {
 
   async function onSubmit(values: PassportFormValues) {
     setServerError(null);
+    const { createPassport, patchPassport } = await import("@/lib/passports/browser-api");
 
-    const createRes = await fetch("/api/passports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildCreatePayload(values)),
-    });
-
-    if (!createRes.ok) {
+    const created = await createPassport(buildCreatePayload(values));
+    if (!created) {
       setServerError("Не удалось создать запись. Проверьте данные и попробуйте снова.");
       return;
     }
-
-    const created = await createRes.json() as { id: number };
 
     const hasChecklistChanges = values.checklist.some(
       (item) => item.is_adapted || item.actual_value?.trim() || String(item.recommendation ?? "").trim()
     );
 
     if (hasChecklistChanges) {
-      await fetch(`/api/passports/${created.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...buildCreatePayload(values),
-          checklist: buildChecklistPatch(values),
-        }),
-      });
+      await patchPassport(created.id, {
+        ...buildCreatePayload(values),
+        checklist: buildChecklistPatch(values),
+      } as Record<string, unknown>);
     }
 
     router.push(`/passports/${created.id}`);

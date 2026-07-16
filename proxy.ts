@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { refreshAccessToken } from "@/lib/auth/backend";
+import { refreshAccessToken } from "@/lib/auth/server-proxy";
 import { decodeJwtPayload, isJwtExpired } from "@/lib/auth/jwt";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/auth/session";
 

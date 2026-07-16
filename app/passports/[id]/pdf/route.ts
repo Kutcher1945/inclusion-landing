@@ -1,4 +1,4 @@
-import { AuthError, refreshAccessToken } from "@/lib/auth/backend";
+import { AuthError, refreshAccessToken } from "@/lib/auth/server-proxy";
 import { readSessionTokens } from "@/lib/auth/session";
 
 const BACKEND = process.env.BACKEND_API_URL ?? "https://green-admin.smartalmaty.kz";

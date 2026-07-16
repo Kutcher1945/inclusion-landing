@@ -1,42 +1,66 @@
-export const dynamic = "force-dynamic";
+"use client";
 
+import { Suspense, use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { fetchPassportDetail } from "@/lib/passports/detail-api";
-import { fetchReferenceData } from "@/lib/passports/api";
+import { fetchPassportDetail, fetchReferenceData } from "@/lib/passports/browser-api";
 import { toPassportFormData } from "@/lib/passports/form-data";
 import { PassportEditForm } from "./PassportEditForm";
 import { DeletePassportButton } from "@/app/passports/DeletePassportButton";
+import type { ReferenceData } from "@/lib/passports/types";
+import type { PassportFormData } from "@/lib/passports/form-data";
+import type { CriterionDisplay } from "@/lib/passports/form-data";
 
-type Props = {
-  params: Promise<{ id: string }>;
+const EMPTY_REFS: ReferenceData = {
+  statuses: [], deliveryStatuses: [], districts: [],
+  activityTypes: [], activitySubTypes: [], departments: [],
 };
 
-export async function generateMetadata({ params }: Props) {
-  const { id } = await params;
-  return { title: `Паспорт #${id} — Паспортизация` };
-}
+type Props = { params: Promise<{ id: string }> };
 
-export default async function PassportDetailPage({ params }: Props) {
-  const { id: idStr } = await params;
-  const id = parseInt(idStr, 10);
+function PassportDetailContent({ id }: { id: number }) {
+  const router = useRouter();
 
-  if (!Number.isFinite(id) || id <= 0) notFound();
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [title, setTitle] = useState<string>(`Объект #${id}`);
+  const [formData, setFormData] = useState<PassportFormData | null>(null);
+  const [criterionDisplay, setCriterionDisplay] = useState<CriterionDisplay[]>([]);
+  const [refs, setRefs] = useState<ReferenceData>(EMPTY_REFS);
+  const [updatedAt, setUpdatedAt] = useState<string>("");
 
-  const [fetchResult, refs] = await Promise.all([
-    fetchPassportDetail(id),
-    fetchReferenceData(),
-  ]);
+  useEffect(() => {
+    Promise.all([fetchPassportDetail(id), fetchReferenceData()]).then(([result, refData]) => {
+      setRefs(refData);
+      if (result.kind === "unauthorized") { router.push("/login"); return; }
+      if (result.kind !== "ok") { setNotFound(true); setLoading(false); return; }
 
-  if (fetchResult.kind !== "ok") {
-    if (fetchResult.kind === "unauthorized") redirect("/login");
-    notFound(); // covers "not_found" and "error"
+      const { formData: fd, criterionDisplay: cd } = toPassportFormData(result.data);
+      setFormData(fd);
+      setCriterionDisplay(cd);
+      setUpdatedAt(fd.updated_at);
+      setTitle(fd.name_ru?.trim() || fd.name_kz?.trim() || `Объект #${id}`);
+      setLoading(false);
+    });
+  }, [id, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[30vh]">
+        <span className="text-sm text-foreground/40">Загрузка…</span>
+      </div>
+    );
   }
 
-  const passport = fetchResult.data;
-  const { formData, criterionDisplay } = toPassportFormData(passport);
-  const title = formData.name_ru?.trim() || formData.name_kz?.trim() || `Объект #${id}`;
+  if (notFound || !formData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[30vh] gap-2 text-center">
+        <p className="text-sm font-medium text-foreground/70">Объект не найден</p>
+        <Link href="/passports" className="text-xs text-brand hover:underline">← Вернуться к списку</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -52,7 +76,7 @@ export default async function PassportDetailPage({ params }: Props) {
           <div>
             <h1 className="text-xl font-semibold text-foreground leading-tight">{title}</h1>
             <p className="text-sm text-foreground/40 mt-0.5">
-              ID {formData.id} · обновлён {new Date(formData.updated_at).toLocaleDateString("ru-RU")}
+              ID {formData.id} · обновлён {new Date(updatedAt).toLocaleDateString("ru-RU")}
             </p>
           </div>
         </div>
@@ -63,5 +87,20 @@ export default async function PassportDetailPage({ params }: Props) {
         <PassportEditForm formData={formData} criterionDisplay={criterionDisplay} refs={refs} />
       </div>
     </div>
+  );
+}
+
+export default function PassportDetailPage({ params }: Props) {
+  const { id: idStr } = use(params);
+  const id = parseInt(idStr, 10);
+
+  if (!Number.isFinite(id) || id <= 0) {
+    return <p className="text-sm text-foreground/50 p-8">Неверный ID</p>;
+  }
+
+  return (
+    <Suspense>
+      <PassportDetailContent id={id} />
+    </Suspense>
   );
 }

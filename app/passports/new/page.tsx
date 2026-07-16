@@ -1,14 +1,47 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { fetchReferenceData } from "@/lib/passports/api";
-import { fetchCriterionSchema } from "@/lib/passports/detail-api";
+import { fetchReferenceData, fetchCriterionSchema } from "@/lib/passports/browser-api";
 import { PassportCreateForm } from "./PassportCreateForm";
+import type { ReferenceData } from "@/lib/passports/types";
+import type { CriterionDisplay } from "@/lib/passports/form-data";
 
-export const metadata = { title: "Новая запись — Паспортизация" };
+const EMPTY_REFS: ReferenceData = {
+  statuses: [], deliveryStatuses: [], districts: [],
+  activityTypes: [], activitySubTypes: [], departments: [],
+};
 
-export default async function PassportNewPage() {
-  const [refs, criterionDisplay] = await Promise.all([fetchReferenceData(), fetchCriterionSchema()]);
+function PassportNewContent() {
+  const [loading, setLoading] = useState(true);
+  const [refs, setRefs] = useState<ReferenceData>(EMPTY_REFS);
+  const [criterionDisplay, setCriterionDisplay] = useState<CriterionDisplay[]>([]);
 
+  useEffect(() => {
+    Promise.all([fetchReferenceData(), fetchCriterionSchema()]).then(([refData, schema]) => {
+      setRefs(refData);
+      setCriterionDisplay(schema);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[30vh]">
+        <span className="text-sm text-foreground/40">Загрузка…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-surface rounded-2xl border border-foreground/8 shadow-sm px-6 py-6">
+      <PassportCreateForm refs={refs} criterionDisplay={criterionDisplay} />
+    </div>
+  );
+}
+
+export default function PassportNewPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
@@ -26,10 +59,9 @@ export default async function PassportNewPage() {
           </p>
         </div>
       </div>
-
-      <div className="bg-surface rounded-2xl border border-foreground/8 shadow-sm px-6 py-6">
-        <PassportCreateForm refs={refs} criterionDisplay={criterionDisplay} />
-      </div>
+      <Suspense>
+        <PassportNewContent />
+      </Suspense>
     </div>
   );
 }

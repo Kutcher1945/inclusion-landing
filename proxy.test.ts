@@ -15,7 +15,7 @@ const FUTURE_REFRESH = () => makeToken(now() + 24 * 60 * 60);
 const EXPIRED = () => makeToken(now() - 60);
 
 const { refreshAccessToken } = vi.hoisted(() => ({ refreshAccessToken: vi.fn() }));
-vi.mock("@/lib/auth/backend", () => ({ refreshAccessToken }));
+vi.mock("@/lib/auth/server-proxy", () => ({ refreshAccessToken }));
 
 const { default: proxy } = await import("./proxy");
 

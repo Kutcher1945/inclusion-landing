@@ -1,20 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
+import { restorePassport } from "@/lib/passports/browser-api";
 
-type Props = { id: number };
+type Props = { id: number; onSuccess?: () => void };
 
-export function RestorePassportButton({ id }: Props) {
-  const router = useRouter();
+export function RestorePassportButton({ id, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
 
   async function handleRestore() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/passports/${id}/restore`, { method: "POST" });
-      if (res.ok) router.refresh();
+      const result = await restorePassport(id);
+      if (result) onSuccess?.();
     } finally {
       setLoading(false);
     }
